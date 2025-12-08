@@ -1,0 +1,6 @@
+name: HeadNSeek
+main: de.greensurvivors.headnseek.proxy.HeadNSeek
+version: ${version}
+author: GreenSurvivorsTeam
+depends:
+  - GreenSocket

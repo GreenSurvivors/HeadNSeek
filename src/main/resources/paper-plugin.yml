@@ -1,0 +1,12 @@
+name: HeadNSeek
+version: ${version}
+api-version: "${minecraft_version}"
+main: de.greensurvivors.headnseek.paper.HeadNSeek
+author: GreenSurvivorsTeam
+bootstrapper: de.greensurvivors.headnseek.paper.startup.Bootstrap
+loader: de.greensurvivors.headnseek.paper.startup.Loader
+dependencies:
+  server:
+    GreenSocket:
+      load: BEFORE
+      required: false
