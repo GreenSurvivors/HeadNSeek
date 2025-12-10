@@ -1,1 +1,4 @@
 language: en
+socialadapter:
+  type: 'SLACK'
+  uri: 'https://hooks.slack.com/services/<your webhook here>'

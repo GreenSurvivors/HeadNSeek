@@ -3,7 +3,9 @@ package de.greensurvivors.headnseek.paper.language;
 import org.jetbrains.annotations.NotNull;
 
 public enum TranslationKey {
-    PLUGIN_PREFIX("prefix", "<gold>[HeadNSeek]</gold>");
+    PLUGIN_PREFIX("prefix", "<gold>[HeadNSeek]</gold>"),
+    SOCIAL_MESSAGE("social.message") // todo
+    ;
 
     private final @NotNull String path;
     private final @NotNull String defaultValue;
