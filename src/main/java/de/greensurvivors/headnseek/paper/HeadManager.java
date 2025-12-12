@@ -11,17 +11,14 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.Formatter;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
-import org.bukkit.GameMode;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
-import org.bukkit.World;
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockType;
 import org.bukkit.block.Skull;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockDropItemEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ItemType;
@@ -30,9 +27,9 @@ import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 @SuppressWarnings("UnstableApiUsage")
@@ -62,7 +59,7 @@ public class HeadManager implements Listener {
 
     }
 
-    public @NotNull ItemStack setHead (final @Range(from = 1, to = 8) int number, final @NotNull ItemStack stack) {
+    public @NotNull ItemStack setHead(final @Range(from = 1, to = 8) int number, final @NotNull ItemStack stack) {
         final @NotNull ItemStack clone = stack.clone();
 
         clone.editPersistentDataContainer(persistentDataContainer ->
@@ -84,7 +81,7 @@ public class HeadManager implements Listener {
      * So we just save and load it ourselves.
      */
     @EventHandler(ignoreCancelled = true)
-    private void onBlockPlace (final @NotNull BlockPlaceEvent event) {
+    private void onBlockPlace(final @NotNull BlockPlaceEvent event) {
         final @NotNull ItemStack itemInHand = event.getItemInHand();
 
         if (itemInHand.getType() == Registry.MATERIAL.get(ItemType.PLAYER_HEAD.key())) {
@@ -113,62 +110,64 @@ public class HeadManager implements Listener {
     }
 
     @EventHandler(ignoreCancelled = true)
-    private void onBlockBreak (final @NotNull BlockBreakEvent event) {
+    private void onBlockBreak(final @NotNull BlockDropItemEvent event) {
         final @NotNull Player player = event.getPlayer();
-        if (player.getGameMode() != GameMode.CREATIVE) { // the team should be able to break them without triggering the plugin
-            final @NotNull Block block = event.getBlock();
+        if (event.getBlock().getState(false) instanceof Skull playerHead) {
+            final @Nullable Integer headNumber = playerHead.getPersistentDataContainer().get(numberKey, PersistentDataType.INTEGER);
 
-            if (block.getState(false) instanceof Skull playerHead) {
-                final @NotNull PersistentDataContainer blockPersistentDataContainer = playerHead.getPersistentDataContainer();
-                final @Nullable Integer headNumber = blockPersistentDataContainer.get(numberKey, PersistentDataType.INTEGER);
-
-                if (headNumber != null) {
-                    if (player.hasPermission(PermissionWrapper.ACTION_FIND_HEAD.getPermission())) {
-                        final @Nullable String jsonLore = blockPersistentDataContainer.get(loreKey, PersistentDataType.STRING);
-                        @Nullable List<@NotNull Component> lore;
-
-                        if (jsonLore != null) {
-                            try {
-                                final @NotNull JsonArray jsonArray = JsonParser.parseString(jsonLore).getAsJsonArray();
-                                lore = new ArrayList<>();
-
-                                for (JsonElement jsonElement : jsonArray) {
-                                    lore.add(GsonComponentSerializer.gson().deserializeFromTree(jsonElement));
-                                }
-                            } catch (JsonParseException | IllegalStateException e) {
-                                plugin.getComponentLogger().warn("Could not parse lore for head number " + headNumber +
-                                    " at " + block.getLocation() + " broken by " + player.name() + " (" + player.getUniqueId() + ").", e);
-
-                                lore = null;
-                            }
-                        } else {
-                            lore = null;
-                        }
-
-                        final @NotNull Collection<@NotNull ItemStack> blockDrops = block.getDrops(player.getInventory().getItemInMainHand(), player);
-                        final World world = block.getWorld();
-
-                        for (final @NotNull ItemStack itemStack : blockDrops) {
-                            if (lore != null) {
-                                itemStack.setData(
-                                    DataComponentTypes.LORE,
-                                    ItemLore.lore(lore)
-                                );
-                            }
-
-                            world.dropItemNaturally(block.getLocation(), itemStack);
-                        }
-
-                        block.setType(Registry.MATERIAL.get(BlockType.AIR.key()));
-
-                        plugin.getSocialAdapter().sendMessage(plugin.getMessageManager().getLang(
-                            TranslationKey.SOCIAL_MESSAGE,
-                            Placeholder.component(PlaceHolderKey.PLAYER.getKey(), player.displayName()),
-                            // todo item name??
-                            Formatter.number(PlaceHolderKey.NUMBER.getKey(), headNumber)
-                        ));
-                    }
+            if (headNumber != null) {
+                if (!player.hasPermission(PermissionWrapper.ACTION_FIND_HEAD.getPermission())) {
                     event.setCancelled(true);
+                    // todo message
+                }
+            }
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    private void onBlockDropItem(final @NotNull BlockDropItemEvent event) {
+        final @NotNull Player player = event.getPlayer();
+
+        if (event.getBlockState() instanceof Skull playerHead) {
+            final @NotNull PersistentDataContainer blockPersistentDataContainer = playerHead.getPersistentDataContainer();
+            final @Nullable Integer headNumber = blockPersistentDataContainer.get(numberKey, PersistentDataType.INTEGER);
+
+            if (headNumber != null) {
+                try {
+                    restoreLore(event, blockPersistentDataContainer);
+                } catch (JsonParseException | IllegalStateException e) {
+                    plugin.getComponentLogger().warn("Could not parse lore for head number " + headNumber +
+                        " at " + event.getBlock().getLocation() + " broken by " + player.name() +
+                        " (" + player.getUniqueId() + ").", e);
+                }
+
+                plugin.getSocialAdapter().sendMessage(plugin.getMessageManager().getLang(
+                    TranslationKey.SOCIAL_MESSAGE,
+                    Placeholder.component(PlaceHolderKey.PLAYER.getKey(), player.displayName()),
+                    // todo item name??
+                    Formatter.number(PlaceHolderKey.NUMBER.getKey(), headNumber)
+                ));
+            }
+        }
+    }
+
+    private void restoreLore(@NonNull BlockDropItemEvent event, @NonNull PersistentDataContainer blockPersistentDataContainer) throws JsonParseException, IllegalStateException {
+        final @Nullable String jsonLoreStr = blockPersistentDataContainer.get(loreKey, PersistentDataType.STRING);
+        final @Nullable List<@NotNull Component> lore;
+
+        if (jsonLoreStr != null) {
+            final @NotNull JsonArray jsonArray = JsonParser.parseString(jsonLoreStr).getAsJsonArray();
+            lore = new ArrayList<>();
+
+            for (JsonElement jsonElement : jsonArray) {
+                lore.add(GsonComponentSerializer.gson().deserializeFromTree(jsonElement));
+            }
+
+            for (final @NotNull Item item : event.getItems()) {
+                final @NotNull ItemStack itemStack = item.getItemStack();
+
+                if (itemStack.getType() == Registry.MATERIAL.get(ItemType.PLAYER_HEAD.key())) {
+                    itemStack.setData(DataComponentTypes.LORE, ItemLore.lore(lore));
                 }
             }
         }
