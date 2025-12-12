@@ -29,7 +29,6 @@ public class HeadNSeek extends JavaPlugin {
         configManager.reload();
         messageManager.reload(configManager.getLocale());
         socialAdapter = configManager.getSocialAdapterType().createNew(this);
-        socialAdapter.setUri(configManager.getSocialAdapterUri());
 
         headManager.reload();
     }

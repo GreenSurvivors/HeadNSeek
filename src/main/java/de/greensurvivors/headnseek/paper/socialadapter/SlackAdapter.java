@@ -7,8 +7,10 @@ import de.greensurvivors.headnseek.paper.HeadNSeek;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -24,11 +26,16 @@ public class SlackAdapter extends ASocialAdapter implements AutoCloseable {
 
     @Override
     public void sendMessage(final @NotNull Component message) {
+        final @Nullable URI uri = plugin.getConfigManager().getSocialAdapterUri();
+
         if (uri == null) {
+            plugin.getComponentLogger().warn("Could not send message to slack!");
             plugin.getComponentLogger().debug(message);
+
+            return;
         }
 
-        final @NotNull HttpRequest.Builder requestBuilder = HttpRequest.newBuilder(super.uri);
+        final @NotNull HttpRequest.Builder requestBuilder = HttpRequest.newBuilder(uri);
 
         // header
         requestBuilder.header("Content-Type", "application/json; charset=UTF-8");

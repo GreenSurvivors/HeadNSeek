@@ -14,6 +14,9 @@ import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.block.Skull;
+import org.bukkit.configuration.InvalidConfigurationException;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -29,8 +32,16 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.NonNull;
 
+import java.io.IOException;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 
 @SuppressWarnings("UnstableApiUsage")
 public class HeadManager implements Listener {
@@ -40,37 +51,73 @@ public class HeadManager implements Listener {
     // There is currently no good way in the api to retrieve it.
     // So we're doing double work here, to "bugfix" around mojang.
     private final @NotNull NamespacedKey loreKey;
+    private final @NotNull Path headConfigPath;
 
     private final @NotNull Int2ObjectOpenHashMap<@NotNull ItemStack> heads = new Int2ObjectOpenHashMap<>();
+    private final @NotNull FileConfiguration headConfig = new YamlConfiguration();
 
     public HeadManager(final @NotNull HeadNSeek plugin) {
         this.plugin = plugin;
         numberKey = new NamespacedKey(plugin, "headnum");
         loreKey = new NamespacedKey(plugin, "lore");
+        headConfigPath = plugin.getDataPath().resolve("headStorage.yml");
 
         heads.defaultReturnValue(ItemStack.empty());
+        headConfig.options().parseComments(true);
     }
 
     public void registerListeners() {
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
 
-    public void reload() { // todo
+    public void reload() {
+        heads.clear();
 
+        if (Files.exists(headConfigPath)) {
+            try {
+                headConfig.load(Files.newBufferedReader(headConfigPath));
+
+                for (final @NotNull Map.Entry<@NotNull String, ?> entry : headConfig.getValues(false).entrySet()) {
+                    try {
+                        final int headNumber = Integer.parseInt(entry.getKey());
+
+                        if (entry.getValue() instanceof final @NotNull String base64Str) {
+                            heads.put(headNumber, ItemStack.deserializeBytes(Base64.getDecoder().decode(base64Str)));
+                        } else {
+                            plugin.getComponentLogger().warn("Could not read head number " + headNumber + ", because " + entry.getValue() + " is not a string! Ignoring.");
+                        }
+                    } catch (final @NotNull NumberFormatException e) {
+                        plugin.getComponentLogger().warn("Couldn't load head, because " + entry.getKey() + " is not a integer. Ignoring.", e);
+                    }
+                }
+            } catch (IOException | InvalidConfigurationException e) {
+                plugin.getComponentLogger().error("Couldn't load head storage file!", e);
+            }
+        }
     }
 
-    public @NotNull ItemStack setHead(final @Range(from = 1, to = 8) int number, final @NotNull ItemStack stack) {
+    public @NotNull ItemStack setHead(final @Range(from = 1, to = Integer.MAX_VALUE) int number, final @NotNull ItemStack stack) {
         final @NotNull ItemStack clone = stack.clone();
 
         clone.editPersistentDataContainer(persistentDataContainer ->
             persistentDataContainer.set(numberKey, PersistentDataType.INTEGER, number));
 
-        // todo safe to disk
+        headConfig.set(String.valueOf(number), Base64.getEncoder().encodeToString(stack.serializeAsBytes()));
+
+        try (final @NotNull Writer writer = Files.newBufferedWriter(headConfigPath,
+            StandardCharsets.UTF_8,
+            StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
+
+            writer.write(headConfig.saveToString());
+        } catch (final @NotNull IOException e) {
+            plugin.getComponentLogger().error("Could not safe head file to disk. Data loss is imminent!", e);
+        }
 
         return this.heads.put(number, clone);
     }
 
-    public @NotNull ItemStack getHead(final @Range(from = 1, to = 8) int number) {
+    /// @return the ItemStack associated with the given number. Might be empty if non was found
+    public @NotNull ItemStack getHead(final @Range(from = 1, to = Integer.MAX_VALUE) int number) {
         return heads.get(number);
     }
 
@@ -118,7 +165,8 @@ public class HeadManager implements Listener {
             if (headNumber != null) {
                 if (!player.hasPermission(PermissionWrapper.ACTION_FIND_HEAD.getPermission())) {
                     event.setCancelled(true);
-                    // todo message
+
+                    plugin.getMessageManager().sendLang(player, TranslationKey.ERROR_NO_PERMISSION);
                 }
             }
         }
@@ -144,7 +192,6 @@ public class HeadManager implements Listener {
                 plugin.getSocialAdapter().sendMessage(plugin.getMessageManager().getLang(
                     TranslationKey.SOCIAL_MESSAGE,
                     Placeholder.component(PlaceHolderKey.PLAYER.getKey(), player.displayName()),
-                    // todo item name??
                     Formatter.number(PlaceHolderKey.NUMBER.getKey(), headNumber)
                 ));
             }
