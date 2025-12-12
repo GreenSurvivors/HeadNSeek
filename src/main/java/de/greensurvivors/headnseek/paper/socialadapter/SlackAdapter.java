@@ -61,8 +61,8 @@ public class SlackAdapter extends ASocialAdapter implements AutoCloseable {
     }
 
     @Override
-    public @NotNull SocialAdapterType getTyp() {
-        return SocialAdapterType.SLACK;
+    public @NotNull ASocialAdapterType getTyp() {
+        return ASocialAdapterType.SLACK;
     }
 
     @Override

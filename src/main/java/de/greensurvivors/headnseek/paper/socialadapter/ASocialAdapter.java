@@ -13,5 +13,5 @@ public abstract class ASocialAdapter {
 
     public abstract void sendMessage(final @NotNull Component message);
 
-    public abstract @NotNull SocialAdapterType getTyp();
+    public abstract @NotNull ASocialAdapterType getTyp();
 }

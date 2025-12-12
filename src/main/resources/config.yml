@@ -1,4 +1,5 @@
 language: en
 socialadapter:
+  # SLACK and DUMMY
   type: 'SLACK'
   uri: 'https://hooks.slack.com/services/<your webhook here>'
