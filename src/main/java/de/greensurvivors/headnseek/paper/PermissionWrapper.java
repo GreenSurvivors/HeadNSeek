@@ -12,8 +12,13 @@ public enum PermissionWrapper {
     ACTIONS("action.*", Map.of(
         ACTION_FIND_HEAD.permission.getName(), Boolean.TRUE
     )),
+    CMD_SET("cmd.set"),
+    COMMANDS("cmd.*", Map.of(
+        CMD_SET.permission.getName(), Boolean.TRUE
+    )),
     Admin("*", Map.of(
         ACTIONS.permission.getName(), Boolean.TRUE,
+        COMMANDS.permission.getName(), Boolean.TRUE
     ));
 
     private final @NotNull Permission permission;
