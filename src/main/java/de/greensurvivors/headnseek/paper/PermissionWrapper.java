@@ -9,8 +9,11 @@ import java.util.Map;
 
 public enum PermissionWrapper {
     ACTION_FIND_HEAD("action.find_head"),
-    Admin("*", Map.of(
+    ACTIONS("action.*", Map.of(
         ACTION_FIND_HEAD.permission.getName(), Boolean.TRUE
+    )),
+    Admin("*", Map.of(
+        ACTIONS.permission.getName(), Boolean.TRUE,
     ));
 
     private final @NotNull Permission permission;

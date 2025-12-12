@@ -10,17 +10,19 @@ import org.jetbrains.annotations.NotNull;
 public class HeadNSeek extends JavaPlugin {
     private final @NotNull PaperConfigManager configManager;
     private final @NotNull MessageManager messageManager;
+    private final @NotNull HeadManager headManager;
     private @NotNull ASocialAdapter socialAdapter = SocialAdapterType.SLACK.createNew(this);
 
     public HeadNSeek() {
         this.configManager = new PaperConfigManager(this);
         this.messageManager = new MessageManager(this);
+        this.headManager = new HeadManager(this);
     }
 
     @Override
     public void onEnable () {
-        new HeadManager(this);
         reload();
+        headManager.registerListeners();
     }
 
     public void reload() {
@@ -28,6 +30,8 @@ public class HeadNSeek extends JavaPlugin {
         messageManager.reload(configManager.getLocale());
         socialAdapter = configManager.getSocialAdapterType().createNew(this);
         socialAdapter.setUri(configManager.getSocialAdapterUri());
+
+        headManager.reload();
     }
 
     public @NotNull PaperConfigManager getConfigManager() {
@@ -40,5 +44,9 @@ public class HeadNSeek extends JavaPlugin {
 
     public @NotNull ASocialAdapter getSocialAdapter() {
         return socialAdapter;
+    }
+
+    public @NotNull HeadManager getHeadManager() {
+        return headManager;
     }
 }

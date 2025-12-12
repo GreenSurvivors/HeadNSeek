@@ -1,60 +1,174 @@
 package de.greensurvivors.headnseek.paper;
 
+import com.google.gson.*;
 import de.greensurvivors.headnseek.paper.language.PlaceHolderKey;
 import de.greensurvivors.headnseek.paper.language.TranslationKey;
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.ItemLore;
+import io.papermc.paper.persistence.PersistentDataContainerView;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.Formatter;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import org.bukkit.GameMode;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
+import org.bukkit.World;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockType;
 import org.bukkit.block.Skull;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.ItemType;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Range;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+@SuppressWarnings("UnstableApiUsage")
 public class HeadManager implements Listener {
     private final @NotNull HeadNSeek plugin;
     private final @NotNull NamespacedKey numberKey;
-    private final @NotNull NamespacedKey wasFoundKey;
+    // Note: The lore already gets saved on the tile entity but not kept when breaking it.
+    // There is currently no good way in the api to retrieve it.
+    // So we're doing double work here, to "bugfix" around mojang.
+    private final @NotNull NamespacedKey loreKey;
 
-    public HeadManager(@NotNull HeadNSeek plugin) {
+    private final @NotNull Int2ObjectOpenHashMap<@NotNull ItemStack> heads = new Int2ObjectOpenHashMap<>();
+
+    public HeadManager(final @NotNull HeadNSeek plugin) {
         this.plugin = plugin;
-        this.numberKey = new NamespacedKey(plugin, "headnseeknum");
-        this.wasFoundKey = new NamespacedKey(plugin, "wasFound");
+        numberKey = new NamespacedKey(plugin, "headnum");
+        loreKey = new NamespacedKey(plugin, "lore");
 
+        heads.defaultReturnValue(ItemStack.empty());
+    }
+
+    public void registerListeners() {
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
+    }
+
+    public void reload() { // todo
+
+    }
+
+    public @NotNull ItemStack setHead (final @Range(from = 1, to = 8) int number, final @NotNull ItemStack stack) {
+        final @NotNull ItemStack clone = stack.clone();
+
+        clone.editPersistentDataContainer(persistentDataContainer ->
+            persistentDataContainer.set(numberKey, PersistentDataType.INTEGER, number));
+
+        // todo safe to disk
+
+        return this.heads.put(number, clone);
+    }
+
+    public @NotNull ItemStack getHead(final @Range(from = 1, to = 8) int number) {
+        return heads.get(number);
+    }
+
+    /**
+     * Tile entities do not retain the persistent data container used by this plugin when getting placed.
+     * Also, they do save the lore but, it gets discarded when breaking the block and getting the item.
+     * (why??)
+     * So we just save and load it ourselves.
+     */
+    @EventHandler(ignoreCancelled = true)
+    private void onBlockPlace (final @NotNull BlockPlaceEvent event) {
+        final @NotNull ItemStack itemInHand = event.getItemInHand();
+
+        if (itemInHand.getType() == Registry.MATERIAL.get(ItemType.PLAYER_HEAD.key())) {
+            final @NotNull PersistentDataContainerView persistentDataContainerViewItem = itemInHand.getPersistentDataContainer();
+            final @Nullable Integer headNumber = persistentDataContainerViewItem.get(numberKey, PersistentDataType.INTEGER);
+
+            if (headNumber != null) {
+                if (event.getBlockPlaced().getState(false) instanceof final @NotNull Skull playerHeadBlockState) {
+                    final @NotNull PersistentDataContainer persistentDataContainerBockState = playerHeadBlockState.getPersistentDataContainer();
+
+                    persistentDataContainerBockState.set(numberKey, PersistentDataType.INTEGER, headNumber);
+
+                    final @Nullable List<@NotNull Component> lore = itemInHand.lore();
+                    if (lore != null) {
+                        final @NotNull JsonArray listObj = new JsonArray();
+
+                        for (Component loreLine : lore) {
+                            listObj.add(GsonComponentSerializer.gson().serializeToTree(loreLine));
+                        }
+
+                        persistentDataContainerBockState.set(loreKey, PersistentDataType.STRING, listObj.toString());
+                    }
+                }
+            }
+        }
     }
 
     @EventHandler(ignoreCancelled = true)
     private void onBlockBreak (final @NotNull BlockBreakEvent event) {
         final @NotNull Player player = event.getPlayer();
-        if (player.getGameMode() != GameMode.CREATIVE) { // team
+        if (player.getGameMode() != GameMode.CREATIVE) { // the team should be able to break them without triggering the plugin
+            final @NotNull Block block = event.getBlock();
 
-            if (event.getBlock().getState(false) instanceof Skull playerHead) {
-                final @NotNull PersistentDataContainer persistentDataContainer = playerHead.getPersistentDataContainer();
-                final @Nullable Integer headNumber = persistentDataContainer.get(numberKey, PersistentDataType.INTEGER);
+            if (block.getState(false) instanceof Skull playerHead) {
+                final @NotNull PersistentDataContainer blockPersistentDataContainer = playerHead.getPersistentDataContainer();
+                final @Nullable Integer headNumber = blockPersistentDataContainer.get(numberKey, PersistentDataType.INTEGER);
 
                 if (headNumber != null) {
-                    final @Nullable Boolean wasFound = persistentDataContainer.get(wasFoundKey, PersistentDataType.BOOLEAN);
+                    if (player.hasPermission(PermissionWrapper.ACTION_FIND_HEAD.getPermission())) {
+                        final @Nullable String jsonLore = blockPersistentDataContainer.get(loreKey, PersistentDataType.STRING);
+                        @Nullable List<@NotNull Component> lore;
 
-                    if (wasFound == null || wasFound) {
-                        if (player.hasPermission(PermissionWrapper.ACTION_FIND_HEAD.getPermission())) {
-                            persistentDataContainer.set(wasFoundKey, PersistentDataType.BOOLEAN, Boolean.TRUE);
+                        if (jsonLore != null) {
+                            try {
+                                final @NotNull JsonArray jsonArray = JsonParser.parseString(jsonLore).getAsJsonArray();
+                                lore = new ArrayList<>();
 
-                            plugin.getSocialAdapter().sendMessage(plugin.getMessageManager().getLang(
-                                TranslationKey.SOCIAL_MESSAGE,
-                                Placeholder.component(PlaceHolderKey.PLAYER.getKey(), player.displayName()),
-                                Formatter.number(PlaceHolderKey.NUMBER.getKey(), headNumber)
-                                )
-                            );
+                                for (JsonElement jsonElement : jsonArray) {
+                                    lore.add(GsonComponentSerializer.gson().deserializeFromTree(jsonElement));
+                                }
+                            } catch (JsonParseException | IllegalStateException e) {
+                                plugin.getComponentLogger().warn("Could not parse lore for head number " + headNumber +
+                                    " at " + block.getLocation() + " broken by " + player.name() + " (" + player.getUniqueId() + ").", e);
+
+                                lore = null;
+                            }
                         } else {
-                            event.setCancelled(true);
+                            lore = null;
                         }
+
+                        final @NotNull Collection<@NotNull ItemStack> blockDrops = block.getDrops(player.getInventory().getItemInMainHand(), player);
+                        final World world = block.getWorld();
+
+                        for (final @NotNull ItemStack itemStack : blockDrops) {
+                            if (lore != null) {
+                                itemStack.setData(
+                                    DataComponentTypes.LORE,
+                                    ItemLore.lore(lore)
+                                );
+                            }
+
+                            world.dropItemNaturally(block.getLocation(), itemStack);
+                        }
+
+                        block.setType(Registry.MATERIAL.get(BlockType.AIR.key()));
+
+                        plugin.getSocialAdapter().sendMessage(plugin.getMessageManager().getLang(
+                            TranslationKey.SOCIAL_MESSAGE,
+                            Placeholder.component(PlaceHolderKey.PLAYER.getKey(), player.displayName()),
+                            // todo item name??
+                            Formatter.number(PlaceHolderKey.NUMBER.getKey(), headNumber)
+                        ));
                     }
+                    event.setCancelled(true);
                 }
             }
         }
