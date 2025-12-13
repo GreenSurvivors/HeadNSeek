@@ -4,9 +4,11 @@ import org.jetbrains.annotations.NotNull;
 
 public enum TranslationKey {
     PLUGIN_PREFIX("prefix", "<gold>[HeadNSeek]</gold>"),
+    ACTION_FOUND("action.foundHead"), // todo
     SOCIAL_MESSAGE_FOUND("social.message.found"), // todo
     POXY_MESSAGE_FOUND("proxy.message.found"), // todo
-    ERROR_NO_PERMISSION("error.noPermission") // todo
+    ERROR_NO_PERMISSION("error.noPermission"), // todo
+    RELOAD_SUCCESS("reload.success") // todo
     ;
 
     private final @NotNull String path;

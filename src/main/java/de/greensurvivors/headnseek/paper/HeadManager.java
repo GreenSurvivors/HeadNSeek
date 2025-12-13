@@ -116,9 +116,10 @@ public class HeadManager implements Listener {
         return this.heads.put(number, clone);
     }
 
-    /// @return the ItemStack associated with the given number. Might be empty if non was found
+    /// @return a clone of the ItemStack associated with the given number. Might be empty if non was found
     public @NotNull ItemStack getHead(final @Range(from = 1, to = Integer.MAX_VALUE) int number) {
-        return heads.get(number);
+        final @NotNull ItemStack stack = heads.get(number);
+        return stack.isEmpty() ? stack : stack.clone();
     }
 
     /**
@@ -176,19 +177,21 @@ public class HeadManager implements Listener {
     private void onBlockDropItem(final @NotNull BlockDropItemEvent event) {
         final @NotNull Player player = event.getPlayer();
 
-        if (event.getBlockState() instanceof Skull playerHead) {
+        if (event.getBlockState() instanceof final Skull playerHead) {
             final @NotNull PersistentDataContainer blockPersistentDataContainer = playerHead.getPersistentDataContainer();
             final @Nullable Integer headNumber = blockPersistentDataContainer.get(numberKey, PersistentDataType.INTEGER);
 
             if (headNumber != null) {
                 try {
                     restoreLore(event, blockPersistentDataContainer);
-                } catch (JsonParseException | IllegalStateException e) {
+                } catch (final @NotNull JsonParseException | IllegalStateException e) {
                     plugin.getComponentLogger().warn("Could not parse lore for head number " + headNumber +
                         " at " + event.getBlock().getLocation() + " broken by " + player.name() +
                         " (" + player.getUniqueId() + ").", e);
                 }
 
+                plugin.getMessageManager().sendLang(player, TranslationKey.ACTION_FOUND,
+                    Formatter.number(PlaceHolderKey.NUMBER.getKey(), headNumber));
                 plugin.getSocialAdapter().sendMessage(plugin.getMessageManager().getLang(
                     TranslationKey.SOCIAL_MESSAGE_FOUND,
                     Placeholder.component(PlaceHolderKey.PLAYER.getKey(), player.displayName()),
@@ -211,7 +214,7 @@ public class HeadManager implements Listener {
             final @NotNull JsonArray jsonArray = JsonParser.parseString(jsonLoreStr).getAsJsonArray();
             lore = new ArrayList<>();
 
-            for (JsonElement jsonElement : jsonArray) {
+            for (final @NotNull JsonElement jsonElement : jsonArray) {
                 lore.add(GsonComponentSerializer.gson().deserializeFromTree(jsonElement));
             }
 

@@ -9,7 +9,7 @@ import org.eclipse.aether.repository.RemoteRepository;
 import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings({"UnstableApiUsage", "unused"}) // it IS used, just by paper not we ourselves
-public class Loader implements PluginLoader {
+public class PaperPluginLoader implements PluginLoader {
     @Override
     public void classloader(final @NotNull PluginClasspathBuilder classpathBuilder) {
         MavenLibraryResolver resolver = new MavenLibraryResolver();
