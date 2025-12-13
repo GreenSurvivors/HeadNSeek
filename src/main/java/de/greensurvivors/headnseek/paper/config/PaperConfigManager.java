@@ -1,5 +1,6 @@
 package de.greensurvivors.headnseek.paper.config;
 
+import de.greensurvivors.headnseek.common.config.ConfigOption;
 import de.greensurvivors.headnseek.paper.HeadNSeek;
 import de.greensurvivors.headnseek.paper.socialadapter.ASocialAdapterType;
 import org.bukkit.configuration.file.FileConfiguration;

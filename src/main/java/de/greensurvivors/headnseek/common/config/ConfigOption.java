@@ -1,4 +1,4 @@
-package de.greensurvivors.headnseek.paper.config;
+package de.greensurvivors.headnseek.common.config;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
