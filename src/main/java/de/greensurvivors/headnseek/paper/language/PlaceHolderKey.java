@@ -4,7 +4,8 @@ import org.intellij.lang.annotations.Subst;
 import org.jetbrains.annotations.NotNull;
 
 public enum PlaceHolderKey {
-    PLAYER("player"),
+    PLAYER_NAME("player_name"),
+    PLAYER_UUID("player_uuid"),
     NUMBER("number");
 
     private final @NotNull String key;
@@ -13,7 +14,7 @@ public enum PlaceHolderKey {
         this.key = key;
     }
 
-    @Subst("player")
+    @Subst("player_name")
     public @NotNull String getKey() {
         return key;
     }

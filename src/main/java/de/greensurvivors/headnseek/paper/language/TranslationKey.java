@@ -4,12 +4,11 @@ import org.jetbrains.annotations.NotNull;
 
 public enum TranslationKey {
     PLUGIN_PREFIX("prefix", "<gold>[HeadNSeek]</gold>"),
-    ACTION_FOUND("action.foundHead"), // todo
-    SOCIAL_MESSAGE_FOUND("social.message.found"), // todo
-    POXY_MESSAGE_FOUND("proxy.message.found"), // todo
-    ERROR_NO_PERMISSION("error.noPermission"), // todo
-    RELOAD_SUCCESS("reload.success") // todo
-    ;
+    ACTION_FOUND("action.foundHead"),
+    SOCIAL_MESSAGE_FOUND("social.message.found"),
+    POXY_MESSAGE_FOUND("proxy.message.found"),
+    ERROR_NO_PERMISSION("error.noPermission"),
+    RELOAD_SUCCESS("reload.success");
 
     private final @NotNull String path;
     private final @NotNull String defaultValue;
@@ -19,7 +18,7 @@ public enum TranslationKey {
         this.defaultValue = path; // we don't need to define a default value, but if something couldn't get loaded we have to return at least helpful information
     }
 
-    TranslationKey(@NotNull String path, @NotNull String defaultValue) {
+    TranslationKey(final @NotNull String path, final @NotNull String defaultValue) {
         this.path = path;
         this.defaultValue = defaultValue;
     }
