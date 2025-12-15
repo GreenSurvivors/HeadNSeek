@@ -19,6 +19,7 @@ public class HeadNSeek extends JavaPlugin {
     private final @NotNull MessageManager messageManager;
     private final @NotNull HeadManager headManager;
     private final @NotNull CmdBase cmdBase;
+    private final @NotNull BoardManager boardManager;
     private @NotNull ASocialAdapter socialAdapter = ASocialAdapterType.DUMMY.createNew(this);
     private @NotNull AProxyAdapter proxyAdapter;
 
@@ -28,9 +29,9 @@ public class HeadNSeek extends JavaPlugin {
         headManager = new HeadManager(this);
         proxyAdapter = new DummyAdapter(this);
         cmdBase = new CmdBase(this);
+        boardManager = new BoardManager(this);
     }
 
-    @SuppressWarnings("UnstableApiUsage")
     @Override
     public void onEnable () {
         reload();
@@ -50,6 +51,7 @@ public class HeadNSeek extends JavaPlugin {
         socialAdapter = configManager.getSocialAdapterType().createNew(this);
 
         headManager.reload();
+        boardManager.reload();
     }
 
     public @NotNull PaperConfigManager getConfigManager() {
@@ -70,5 +72,9 @@ public class HeadNSeek extends JavaPlugin {
 
     public @NotNull AProxyAdapter getProxyAdapter() {
         return proxyAdapter;
+    }
+
+    public @NotNull BoardManager getBoardManager() {
+        return boardManager;
     }
 }

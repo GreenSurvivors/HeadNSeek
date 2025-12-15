@@ -7,11 +7,14 @@ import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import de.greensurvivors.headnseek.paper.HeadNSeek;
 import de.greensurvivors.headnseek.paper.PermissionWrapper;
+import de.greensurvivors.headnseek.paper.language.PlaceHolderKey;
+import de.greensurvivors.headnseek.paper.language.TranslationKey;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.MessageComponentSerializer;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.tag.resolver.Formatter;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -35,16 +38,20 @@ public class ConfigureHeadCmd extends ACommand {
             requires(stack -> {
                 final @NotNull CommandSender sender = stack.getSender();
                 return sender instanceof Player && sender.hasPermission(PermissionWrapper.CMD_CONFIGURE_HEAD.getPermission());
-            }).
-            then(Commands.argument("head number", IntegerArgumentType.integer(0)).
-                executes(context -> {
+            }).then(Commands.argument("head number", IntegerArgumentType.integer(1))
+                .executes(context -> {
                     final Player sender = (Player) context.getSource().getSender();
                     final ItemStack stack = sender.getInventory().getItemInMainHand();
 
                     if (stack.getType().asItemType() == ItemType.PLAYER_HEAD) {
                         final int number = IntegerArgumentType.getInteger(context, "head number");
 
-                        plugin.getHeadManager().setHead(number, stack);
+                        if (plugin.getHeadManager().configureHead(number, stack).isEmpty()) { // todo acknowledge replace
+                        } else {
+
+                        }
+                        plugin.getMessageManager().sendLang(sender, TranslationKey.CMD_CONFIGURE_HEAD_SUCCESS,
+                            Formatter.number(PlaceHolderKey.NUMBER.getKey(), number));
                     } else {
                         throw ERROR_NOT_A_HEAD.create(stack.getType().asItemType().key());
                     }

@@ -9,7 +9,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-@SuppressWarnings("UnstableApiUsage")
 public abstract class ACommand {
     protected final @NotNull HeadNSeek plugin;
 

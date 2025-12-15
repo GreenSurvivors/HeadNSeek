@@ -9,7 +9,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-@SuppressWarnings("UnstableApiUsage")
 public class CmdBase {
     protected final @NotNull HeadNSeek plugin;
     protected final @NotNull Map<@NotNull String, @NotNull ACommand> internalRegisteredCmds = new TreeMap<>();
@@ -19,7 +18,7 @@ public class CmdBase {
 
         registerCmdInternally(new ConfigureHeadCmd(plugin));
         registerCmdInternally(new GetCmd(plugin));
-        registerCmdInternally(new DefinePlaceAreaCmd(plugin));
+        registerCmdInternally(new DefineBoardCmd(plugin));
         registerCmdInternally(new ReloadCmd(plugin));
     }
 

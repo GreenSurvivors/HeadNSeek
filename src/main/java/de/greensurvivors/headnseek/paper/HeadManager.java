@@ -5,6 +5,7 @@ import de.greensurvivors.headnseek.paper.language.PlaceHolderKey;
 import de.greensurvivors.headnseek.paper.language.TranslationKey;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.ItemLore;
+import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import io.papermc.paper.persistence.PersistentDataContainerView;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.kyori.adventure.text.Component;
@@ -96,13 +97,16 @@ public class HeadManager implements Listener {
         }
     }
 
-    public @NotNull ItemStack setHead(final @Range(from = 1, to = Integer.MAX_VALUE) int number, final @NotNull ItemStack stack) {
-        final @NotNull ItemStack clone = stack.clone();
-
-        clone.editPersistentDataContainer(persistentDataContainer ->
+    /// DOES modify the given item by setting the persistent data container head number.
+    /// everything else happens with a clone
+    /// @return the ItemStack PREVIOUSLY attached to the head number. Might be empty if there wasn't any configured yet
+    public @NotNull ItemStack configureHead(final @Range(from = 1, to = Integer.MAX_VALUE) int number, final @NotNull ItemStack stack) {
+        stack.editPersistentDataContainer(persistentDataContainer ->
             persistentDataContainer.set(numberKey, PersistentDataType.INTEGER, number));
+        final @NotNull ItemStack clone = stack.clone();
+        clone.setAmount(1);
 
-        headConfig.set(String.valueOf(number), Base64.getEncoder().encodeToString(stack.serializeAsBytes()));
+        headConfig.set(String.valueOf(number), Base64.getEncoder().encodeToString(clone.serializeAsBytes()));
 
         try (final @NotNull Writer writer = Files.newBufferedWriter(headConfigPath,
             StandardCharsets.UTF_8,
@@ -152,6 +156,9 @@ public class HeadManager implements Listener {
 
                         persistentDataContainerBockState.set(loreKey, PersistentDataType.STRING, listObj.toString());
                     }
+
+                    plugin.getServer().broadcast(plugin.getMessageManager().getLang(TranslationKey.ACTION_PLACE_HEAD_BROADCAST),
+                        PermissionWrapper.MESSAGE_PLACE_HEAD_BROADCAST.getPermission().getName());
                 }
             }
         }
@@ -203,11 +210,20 @@ public class HeadManager implements Listener {
                     Placeholder.component(PlaceHolderKey.PLAYER_NAME.getKey(), player.displayName()),
                     Formatter.number(PlaceHolderKey.NUMBER.getKey(), headNumber)
                 ));
+
+                for (final @NotNull Item item : event.getItems()) {
+                    final @NotNull ItemStack itemStack = item.getItemStack();
+                    if (itemStack.getType() == Registry.MATERIAL.get(ItemType.PLAYER_HEAD.key())) {
+                        final @Nullable ResolvableProfile profile = itemStack.getData(DataComponentTypes.PROFILE);
+                        plugin.getBoardManager().findHead(headNumber, profile);
+                        break;
+                    }
+                }
             }
         }
     }
 
-    private void restoreLore(@NonNull BlockDropItemEvent event, @NonNull PersistentDataContainer blockPersistentDataContainer) throws JsonParseException, IllegalStateException {
+    private void restoreLore(final @NonNull BlockDropItemEvent event, final @NonNull PersistentDataContainer blockPersistentDataContainer) throws JsonParseException, IllegalStateException {
         final @Nullable String jsonLoreStr = blockPersistentDataContainer.get(loreKey, PersistentDataType.STRING);
         final @Nullable List<@NotNull Component> lore;
 

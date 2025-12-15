@@ -3,10 +3,14 @@ package de.greensurvivors.headnseek.paper.command;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import de.greensurvivors.headnseek.paper.HeadNSeek;
 import de.greensurvivors.headnseek.paper.PermissionWrapper;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
+import io.papermc.paper.command.brigadier.MessageComponentSerializer;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.text.Component;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -16,8 +20,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-@SuppressWarnings("UnstableApiUsage")
 public class GetCmd extends ACommand {
+    private final static DynamicCommandExceptionType NUMBER_NOT_CONFIGURED = new DynamicCommandExceptionType(key ->
+        MessageComponentSerializer.message().serialize(Component.text("Head number " + ((Key)key).asMinimalString() + " was not configured!")));
 
     public GetCmd(final @NotNull HeadNSeek plugin) {
         super(plugin);
@@ -25,17 +30,17 @@ public class GetCmd extends ACommand {
 
     @Override
     public void buildSubCmd(final @NotNull LiteralArgumentBuilder<@NotNull CommandSourceStack> cmdBuilder) {
-        cmdBuilder.then(Commands.literal(getLiteral()))
+        cmdBuilder.then(Commands.literal(getLiteral())
             .requires(stack -> {
                     final @NotNull CommandSender sender = stack.getSender();
                     return sender instanceof Player && sender.hasPermission(PermissionWrapper.CMD_GET.getPermission());
-            }).then(Commands.argument("head number", IntegerArgumentType.integer(0))
+            }).then(Commands.argument("head number", IntegerArgumentType.integer(1))
                 .executes(context -> {
                     final int number = IntegerArgumentType.getInteger(context, "head number");
 
                     final @NotNull ItemStack stack = plugin.getHeadManager().getHead(number);
                     if (stack.isEmpty()) {
-                        // todo
+                        throw NUMBER_NOT_CONFIGURED.create(number);
                     } else {
                         final @NotNull Player player = ((Player)context.getSource().getSender());
 
@@ -45,7 +50,7 @@ public class GetCmd extends ACommand {
 
                     return Command.SINGLE_SUCCESS;
                 })
-            );
+            ));
     }
 
     @Override

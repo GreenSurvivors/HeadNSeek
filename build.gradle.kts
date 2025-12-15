@@ -1,6 +1,6 @@
 plugins {
     `java-library`
-    id("io.papermc.paperweight.userdev") version "2.0.0-beta.18" // note: beta.19 is dependent on gradle 9 and somehow that breaks library loading in runetime. Based on past experience gradle 9 is horribly broken!
+    id("io.papermc.paperweight.userdev") version "2.0.0-beta.18" // note: beta.19 is dependent on Gradle 9 and somehow that breaks library loading in runetime. Based on past experience Gradle 9 is horribly broken!
     id("xyz.jpenilla.run-paper") version "3.0.2"
     id("xyz.jpenilla.run-waterfall") version "3.0.2"
     id("net.raphimc.class-token-replacer") version "1.1.7" // allows us to replace placeholders with version strings in class files
@@ -21,7 +21,7 @@ version = buildString {
 paperweight.reobfArtifactConfiguration = io.papermc.paperweight.userdev.ReobfArtifactConfiguration.MOJANG_PRODUCTION
 
 java {
-    // Configure the java toolchain. This allows gradle to auto-provision JDK 21 on systems that only have JDK 17 installed for example.
+    // Configure the java toolchain. This allows Gradle to auto-provision JDK 21 on systems that only have JDK 17 installed for example.
     // If you need to compile to for example JVM 8 or 17 bytecode, adjust the 'release' option below and keep the toolchain at 21.
     toolchain.languageVersion = JavaLanguageVersion.of("${rootProject.properties["java_version"]}")
     sourceCompatibility = JavaVersion.toVersion(rootProject.properties["java_version"]!!)
@@ -44,7 +44,7 @@ dependencies {
     compileOnly("io.github.waterfallmc:waterfall-api:${project.properties["waterfall_version"]}-R0.1-SNAPSHOT")
 
     // plus means use the latest. This is a dangerous choice since you might never know what got changed in the dependency.
-    // however since we ourselves control the plugin and want a fail fast behavior - e.a. fail at compile time if the
+    // however since we ourselves control the plugin and want a fail fast behaviour - e.a. fail at compile time if the
     // lastest release on the server will break something, this is ok.
     api("de.greensurvivors:GreenSocket:+")
     compileOnly ("com.github.ben-manes.caffeine:caffeine:${project.properties["caffeine_version"]}") // caches
@@ -91,7 +91,7 @@ tasks {
         waterfallVersion(project.properties["waterfall_version"] as String)
 
         // get jars from dependency
-        // note: this was done to profit from gradles resolving artifact algorithm.
+        // note: this was done to profit from gradles resolving artefact algorithm.
         // doing it like this means we will use the same version as we compile against (latest)
         // and we can ignore classifiers we would to add if we would use downloadPlugins { url("") }
         pluginJars.from(

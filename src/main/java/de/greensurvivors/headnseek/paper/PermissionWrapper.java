@@ -5,7 +5,6 @@ import org.bukkit.permissions.Permission;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
 import java.util.Map;
 
 public enum PermissionWrapper {
@@ -15,17 +14,20 @@ public enum PermissionWrapper {
     )),
     CMD_CONFIGURE_HEAD("cmd.configure_head"),
     CMD_GET("cmd.get"),
-    CMD_DEFINE_AREA("cmd.define_area"),
+    CMD_DEFINE_BOARD("cmd.define_board"),
     CMD_RELOAD("cmd.reload"),
     COMMANDS("cmd.*", Map.of(
         CMD_CONFIGURE_HEAD.permission.getName(), Boolean.TRUE,
         CMD_GET.permission.getName(), Boolean.TRUE,
-        CMD_DEFINE_AREA.permission.getName(), Boolean.TRUE,
+        CMD_DEFINE_BOARD.permission.getName(), Boolean.TRUE,
         CMD_RELOAD.permission.getName(), Boolean.TRUE
     )),
-    Admin("*", Map.of(
+    MESSAGE_PLACE_HEAD_BROADCAST("message.placeHead.broadcast"),
+    @SuppressWarnings("unused")
+    ADMIN("*", Map.of(
         ACTIONS.permission.getName(), Boolean.TRUE,
-        COMMANDS.permission.getName(), Boolean.TRUE
+        COMMANDS.permission.getName(), Boolean.TRUE,
+        MESSAGE_PLACE_HEAD_BROADCAST.permission.getName(), Boolean.TRUE
     ));
 
     private final @NotNull Permission permission;

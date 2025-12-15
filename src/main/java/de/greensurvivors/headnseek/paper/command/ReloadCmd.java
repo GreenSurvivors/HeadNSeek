@@ -11,7 +11,6 @@ import org.bukkit.permissions.Permission;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-@SuppressWarnings("UnstableApiUsage")
 public class ReloadCmd extends ACommand {
     protected ReloadCmd(@NotNull HeadNSeek plugin) {
         super(plugin);

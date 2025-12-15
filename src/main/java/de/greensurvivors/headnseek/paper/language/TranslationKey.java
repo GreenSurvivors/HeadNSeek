@@ -5,6 +5,12 @@ import org.jetbrains.annotations.NotNull;
 public enum TranslationKey {
     PLUGIN_PREFIX("prefix", "<gold>[HeadNSeek]</gold>"),
     ACTION_FOUND("action.foundHead"),
+    ACTION_PLACE_HEAD_BROADCAST("action.placeHead.broadcast"),
+    ACTION_DEFINE_BOARD_SUCCESS("action.defineBoard.success"),
+    ACTION_DEFINE_BOARD_REPLACED("action.defineBoard.replaced"),
+    ACTION_DEFINE_BOARD_ERROR_OVERLAP_CANT_MERGE("action.defineBoard.error.overlap.cantMerge"),
+    CMD_CONFIGURE_HEAD_SUCCESS("cmd.configureHead.success"),
+    CMD_DEFINE_BOARD_START("cmd.defineBoard.start"),
     SOCIAL_MESSAGE_FOUND("social.message.found"),
     POXY_MESSAGE_FOUND("proxy.message.found"),
     ERROR_NO_PERMISSION("error.noPermission"),
