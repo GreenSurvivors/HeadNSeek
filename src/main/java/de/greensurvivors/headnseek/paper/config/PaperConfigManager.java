@@ -12,14 +12,14 @@ import java.net.URI;
 import java.util.Locale;
 
 public class PaperConfigManager {
-    private final @NotNull HeadNSeek plugin;
+    protected final @NotNull HeadNSeek plugin;
 
-    private final @NotNull ConfigOption<@NotNull ComparableVersion> dataVersion = new ConfigOption<>("dataVersion", new ComparableVersion("1.0.0"));
+    protected final @NotNull ConfigOption<@NotNull ComparableVersion> dataVersion = new ConfigOption<>("dataVersion", new ComparableVersion("1.0.0"));
 
-    private final @NotNull ConfigOption<@NotNull Locale> localeConfigOption = new ConfigOption<>("language", Locale.ENGLISH);
+    protected final @NotNull ConfigOption<@NotNull Locale> localeConfigOption = new ConfigOption<>("language", Locale.ENGLISH);
 
-    private final @NotNull ConfigOption<@NotNull ASocialAdapterType> socialAdapterTypeOption = new ConfigOption<>("socialadapter.type", ASocialAdapterType.DUMMY);
-    private final @NotNull ConfigOption<@Nullable URI> socialAdapterURIOption = new ConfigOption<>("socialadapter.uri", null);
+    protected final @NotNull ConfigOption<@NotNull ASocialAdapterType> socialAdapterTypeOption = new ConfigOption<>("socialadapter.type", ASocialAdapterType.DUMMY);
+    protected final @NotNull ConfigOption<@Nullable URI> socialAdapterURIOption = new ConfigOption<>("socialadapter.uri", null);
 
     public PaperConfigManager(@NotNull HeadNSeek plugin) {
         this.plugin = plugin;

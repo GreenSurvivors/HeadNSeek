@@ -46,16 +46,16 @@ import java.util.Map;
 
 @SuppressWarnings("UnstableApiUsage")
 public class HeadManager implements Listener {
-    private final @NotNull HeadNSeek plugin;
-    private final @NotNull NamespacedKey numberKey;
+    protected final @NotNull HeadNSeek plugin;
+    protected final @NotNull NamespacedKey numberKey;
     // Note: The lore already gets saved on the tile entity but not kept when breaking it.
     // There is currently no good way in the api to retrieve it.
     // So we're doing double work here, to "bugfix" around mojang.
-    private final @NotNull NamespacedKey loreKey;
-    private final @NotNull Path headConfigPath;
+    protected final @NotNull NamespacedKey loreKey;
+    protected final @NotNull Path headConfigPath;
 
-    private final @NotNull Int2ObjectOpenHashMap<@NotNull ItemStack> heads = new Int2ObjectOpenHashMap<>();
-    private final @NotNull FileConfiguration headConfig = new YamlConfiguration();
+    protected final @NotNull Int2ObjectOpenHashMap<@NotNull ItemStack> heads = new Int2ObjectOpenHashMap<>();
+    protected final @NotNull FileConfiguration headConfig = new YamlConfiguration();
 
     public HeadManager(final @NotNull HeadNSeek plugin) {
         this.plugin = plugin;
@@ -223,7 +223,7 @@ public class HeadManager implements Listener {
         }
     }
 
-    private void restoreLore(final @NonNull BlockDropItemEvent event, final @NonNull PersistentDataContainer blockPersistentDataContainer) throws JsonParseException, IllegalStateException {
+    protected void restoreLore(final @NonNull BlockDropItemEvent event, final @NonNull PersistentDataContainer blockPersistentDataContainer) throws JsonParseException, IllegalStateException {
         final @Nullable String jsonLoreStr = blockPersistentDataContainer.get(loreKey, PersistentDataType.STRING);
         final @Nullable List<@NotNull Component> lore;
 

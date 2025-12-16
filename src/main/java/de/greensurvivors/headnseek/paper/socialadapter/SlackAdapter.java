@@ -17,8 +17,8 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 
 public class SlackAdapter extends ASocialAdapter implements AutoCloseable {
-    private final @NotNull Gson gson = new Gson();
-    private final @NotNull HttpClient httpClient = HttpClient.newHttpClient();
+    protected final @NotNull Gson gson = new Gson();
+    protected final @NotNull HttpClient httpClient = HttpClient.newHttpClient();
 
     protected SlackAdapter(final @NotNull HeadNSeek plugin) {
         super(plugin);
