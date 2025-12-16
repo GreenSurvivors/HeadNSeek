@@ -3,6 +3,7 @@ package de.greensurvivors.headnseek.paper.config;
 import de.greensurvivors.headnseek.common.config.ConfigOption;
 import de.greensurvivors.headnseek.paper.HeadNSeek;
 import de.greensurvivors.headnseek.paper.socialadapter.ASocialAdapterType;
+import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -12,6 +13,8 @@ import java.util.Locale;
 
 public class PaperConfigManager {
     private final @NotNull HeadNSeek plugin;
+
+    private final @NotNull ConfigOption<@NotNull ComparableVersion> dataVersion = new ConfigOption<>("dataVersion", new ComparableVersion("1.0.0"));
 
     private final @NotNull ConfigOption<@NotNull Locale> localeConfigOption = new ConfigOption<>("language", Locale.ENGLISH);
 
@@ -27,6 +30,16 @@ public class PaperConfigManager {
         plugin.reloadConfig();
 
         final FileConfiguration config = plugin.getConfig();
+
+        final @Nullable String dataVersionStr = config.getString(dataVersion.getPath(), null);
+        if (dataVersionStr == null) {
+            plugin.getComponentLogger().warn("The data version in the config.yml file is missing. Ignoring it for now and assuming everything will go well. Be warned: There be dragons!");
+        } else {
+            final ComparableVersion foundVersion = new ComparableVersion(dataVersionStr);
+            if (foundVersion.compareTo(dataVersion.getValueOrFallback()) > 0) {
+                plugin.getComponentLogger().error("Trying to load config.yml and encountered newer version. Expected: \"{}\", got: \"{}\"", dataVersion.getValueOrFallback(), foundVersion);
+            }
+        }
 
         final @Nullable String localeStr = config.getString(localeConfigOption.getPath(), null);
         localeConfigOption.setValue(localeStr != null ? Locale.forLanguageTag(localeStr) : null);
