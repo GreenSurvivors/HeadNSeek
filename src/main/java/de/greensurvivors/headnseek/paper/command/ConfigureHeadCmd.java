@@ -26,7 +26,7 @@ import org.jetbrains.annotations.Nullable;
 @SuppressWarnings("UnstableApiUsage")
 public class ConfigureHeadCmd extends ACommand {
     private static final @NotNull DynamicCommandExceptionType ERROR_NOT_A_HEAD = new DynamicCommandExceptionType(key ->
-        MessageComponentSerializer.message().serialize(Component.text(((Key)key).asMinimalString() + " is not a player head!")));
+        MessageComponentSerializer.message().serialize(Component.text(((Key) key).asMinimalString() + " is not a player head!")));
 
     public ConfigureHeadCmd(final @NotNull HeadNSeek plugin) {
         super(plugin);

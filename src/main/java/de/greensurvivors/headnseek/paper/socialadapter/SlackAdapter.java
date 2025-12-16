@@ -53,8 +53,8 @@ public class SlackAdapter extends ASocialAdapter implements AutoCloseable {
         // for now all we do is notify, we don't need any response body whatever it may be
         httpClient.sendAsync(request, HttpResponse.BodyHandlers.discarding()).
             // quick check response code
-            thenAccept(response -> {
-                if (response.statusCode()  != HttpURLConnection.HTTP_OK) {
+                thenAccept(response -> {
+                if (response.statusCode() != HttpURLConnection.HTTP_OK) {
                     plugin.getComponentLogger().warn("Got unexpected status code when notifying Slack: {}", response.statusCode());
                 }
             });

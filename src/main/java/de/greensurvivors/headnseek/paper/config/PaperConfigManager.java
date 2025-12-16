@@ -65,11 +65,11 @@ public class PaperConfigManager {
         return localeConfigOption.getValueOrFallback();
     }
 
-    public @NotNull ASocialAdapterType getSocialAdapterType () {
+    public @NotNull ASocialAdapterType getSocialAdapterType() {
         return socialAdapterTypeOption.getValueOrFallback();
     }
 
-    public @Nullable URI getSocialAdapterUri () {
+    public @Nullable URI getSocialAdapterUri() {
         return socialAdapterURIOption.getValueOrFallback();
     }
 }

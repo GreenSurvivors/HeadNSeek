@@ -33,7 +33,7 @@ public class HeadNSeek extends JavaPlugin {
     }
 
     @Override
-    public void onEnable () {
+    public void onEnable() {
         reload();
         headManager.registerListeners();
 

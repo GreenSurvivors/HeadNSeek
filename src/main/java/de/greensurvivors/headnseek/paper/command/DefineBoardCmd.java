@@ -27,7 +27,7 @@ public class DefineBoardCmd extends ACommand {
                 final @NotNull CommandSender sender = stack.getSender();
                 return sender instanceof Player && sender.hasPermission(PermissionWrapper.CMD_DEFINE_BOARD.getPermission());
             }).executes(context -> {
-                final @NotNull Player player = (Player)context.getSource().getSender();
+                final @NotNull Player player = (Player) context.getSource().getSender();
 
                 plugin.getBoardManager().registerForDefining(player.getUniqueId(), false);
                 plugin.getMessageManager().sendLang(player, TranslationKey.CMD_DEFINE_BOARD_START);
@@ -36,7 +36,7 @@ public class DefineBoardCmd extends ACommand {
             }).then(Commands.argument("should update overlapping boards", BoolArgumentType.bool())
                 .executes(context -> {
                     final @NotNull Boolean updateOld = BoolArgumentType.getBool(context, "should update overlapping boards");
-                    final @NotNull Player player = (Player)context.getSource().getSender();
+                    final @NotNull Player player = (Player) context.getSource().getSender();
 
                     plugin.getBoardManager().registerForDefining(player.getUniqueId(), updateOld);
                     plugin.getMessageManager().sendLang(player, TranslationKey.CMD_DEFINE_BOARD_START);

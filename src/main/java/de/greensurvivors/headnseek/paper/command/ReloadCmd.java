@@ -26,7 +26,7 @@ public class ReloadCmd extends ACommand {
                 plugin.getMessageManager().sendLang(context.getSource().getSender(), TranslationKey.RELOAD_SUCCESS);
 
                 return Command.SINGLE_SUCCESS;
-        }));
+            }));
     }
 
     @Override

@@ -22,7 +22,7 @@ import java.util.List;
 
 public class GetCmd extends ACommand {
     private final static DynamicCommandExceptionType NUMBER_NOT_CONFIGURED = new DynamicCommandExceptionType(key ->
-        MessageComponentSerializer.message().serialize(Component.text("Head number " + ((Key)key).asMinimalString() + " was not configured!")));
+        MessageComponentSerializer.message().serialize(Component.text("Head number " + ((Key) key).asMinimalString() + " was not configured!")));
 
     public GetCmd(final @NotNull HeadNSeek plugin) {
         super(plugin);
@@ -32,8 +32,8 @@ public class GetCmd extends ACommand {
     public void buildSubCmd(final @NotNull LiteralArgumentBuilder<@NotNull CommandSourceStack> cmdBuilder) {
         cmdBuilder.then(Commands.literal(getLiteral())
             .requires(stack -> {
-                    final @NotNull CommandSender sender = stack.getSender();
-                    return sender instanceof Player && sender.hasPermission(PermissionWrapper.CMD_GET.getPermission());
+                final @NotNull CommandSender sender = stack.getSender();
+                return sender instanceof Player && sender.hasPermission(PermissionWrapper.CMD_GET.getPermission());
             }).then(Commands.argument("head number", IntegerArgumentType.integer(1))
                 .executes(context -> {
                     final int number = IntegerArgumentType.getInteger(context, "head number");
@@ -42,7 +42,7 @@ public class GetCmd extends ACommand {
                     if (stack.isEmpty()) {
                         throw NUMBER_NOT_CONFIGURED.create(number);
                     } else {
-                        final @NotNull Player player = ((Player)context.getSource().getSender());
+                        final @NotNull Player player = ((Player) context.getSource().getSender());
 
                         player.give(List.of(stack), true);
                         // todo message

@@ -64,7 +64,7 @@ public class BoardManager implements Listener { // todo clear all / near / in wo
         this.plugin = plugin;
         configuration = new YamlConfiguration();
         configuration.set("dataVersion", dataVersion.toString());
-        configuration.set("boards", headBoards); // because this is refference based, there should be no point to ever change this
+        configuration.set("boards", headBoards); // because this is reference based, there should be no point to ever change this
         boardsFilePath = plugin.getDataPath().resolve("headboards.yml");
 
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
@@ -102,7 +102,7 @@ public class BoardManager implements Listener { // todo clear all / near / in wo
     }
 
     @EventHandler(ignoreCancelled = true)
-    protected void onHeadClick (final @NotNull PlayerInteractEvent event) {
+    protected void onHeadClick(final @NotNull PlayerInteractEvent event) {
         if (event.getAction() == Action.RIGHT_CLICK_BLOCK && event.getHand() == EquipmentSlot.HAND) {
             final @Nullable Block block = event.getClickedBlock();
 
@@ -253,10 +253,11 @@ public class BoardManager implements Listener { // todo clear all / near / in wo
             && firstMinZ < secondMaxZ && firstMaxZ > secondMinZ;
     }
 
-    protected record HeadBoard(@NotNull String worldName, @NotNull BlockPosition upperLeft, @NotNull BlockPosition lowerRight,
+    protected record HeadBoard(@NotNull String worldName,
+                               @NotNull BlockPosition upperLeft, @NotNull BlockPosition lowerRight,
                                @NotNull BlockFace facing,
                                // handy little caches
-                               @NotNull Vector rightDir,  int length) implements ConfigurationSerializable {
+                               @NotNull Vector rightDir, int length) implements ConfigurationSerializable {
         protected final static ComparableVersion DATA_VERSION = new ComparableVersion("1.0.0");
 
         @SuppressWarnings("unused")
@@ -269,8 +270,8 @@ public class BoardManager implements Listener { // todo clear all / near / in wo
             }
 
             if (serialized.get("worldName") instanceof String worldName &&
-                serialized.get("upperLeft") instanceof Map<?,?> uncheckedUpperLeft &&
-                serialized.get("lowerRight") instanceof Map<?,?> uncheckedLowerRight &&
+                serialized.get("upperLeft") instanceof Map<?, ?> uncheckedUpperLeft &&
+                serialized.get("lowerRight") instanceof Map<?, ?> uncheckedLowerRight &&
                 serialized.get("facing") instanceof String facingName) {
 
                 final @NotNull BlockPosition upperLeft = Utils.deserializePosition(Utils.checkMap(uncheckedLowerRight, Object.class));

@@ -4,7 +4,7 @@ import de.greensurvivors.headnseek.paper.HeadNSeek;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
 
-public class DummyAdapter extends AProxyAdapter{
+public class DummyAdapter extends AProxyAdapter {
     private final @NotNull Component messageHead = Component.text("Message to proxy:");
 
     public DummyAdapter(final @NotNull HeadNSeek plugin) {

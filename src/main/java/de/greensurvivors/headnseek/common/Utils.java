@@ -10,7 +10,7 @@ import java.util.*;
 
 @SuppressWarnings("UnstableApiUsage")
 public class Utils {
-    private Utils(){
+    private Utils() {
     }
 
     public static int getHorizontalLength(@NonNull BlockPosition upperLeft, @NonNull BlockPosition lowerRight) {
@@ -46,7 +46,7 @@ public class Utils {
         for (final @NotNull Map.Entry<?, ?> entry : input.entrySet()) {
             if (entry.getKey() instanceof String key && clazz.isInstance(entry.getValue())) {
                 //noinspection unchecked
-                result.put(key, (T)entry.getValue());
+                result.put(key, (T) entry.getValue());
             }
         }
 

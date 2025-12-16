@@ -3,7 +3,7 @@ package de.greensurvivors.headnseek.common.config;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class ConfigOption <T> {
+public class ConfigOption<T> {
     private final @NotNull String path;
     private final T fallback;
     private @Nullable T value = null;
@@ -13,11 +13,11 @@ public class ConfigOption <T> {
         this.fallback = fallback;
     }
 
-    public T getValueOrFallback(){
+    public T getValueOrFallback() {
         return value == null ? fallback : value;
     }
 
-    public @NotNull String getPath(){
+    public @NotNull String getPath() {
         return path;
     }
 

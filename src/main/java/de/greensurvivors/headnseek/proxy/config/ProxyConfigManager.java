@@ -38,7 +38,7 @@ public class ProxyConfigManager {
         configProvider = ConfigurationProvider.getProvider(YamlConfiguration.class);
 
 
-        try (final @NotNull InputStream resourceStream = plugin.getResourceAsStream(CONFIG_FILE_NAME)){
+        try (final @NotNull InputStream resourceStream = plugin.getResourceAsStream(CONFIG_FILE_NAME)) {
             config = configProvider.load(new InputStreamReader(resourceStream, StandardCharsets.UTF_8));
         } catch (final @NotNull IOException e) {
             plugin.getSLF4JLogger().error("Could not load default config", e);
@@ -76,7 +76,7 @@ public class ProxyConfigManager {
                     serverToMessageSet = null;
                 }
 
-                if (serverToMessageSet != null && ! serverToMessageSet.isEmpty()) {
+                if (serverToMessageSet != null && !serverToMessageSet.isEmpty()) {
                     serverToMessage.setValue(serverToMessageSet);
                 }
             } catch (IOException e) {
