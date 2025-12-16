@@ -6,7 +6,9 @@ import org.jetbrains.annotations.NotNull;
 public enum PlaceHolderKey {
     PLAYER_NAME("player_name"),
     PLAYER_UUID("player_uuid"),
-    NUMBER("number");
+    NUMBER("number"),
+    WORLD("world"),
+    RADIUS("radius");
 
     private final @NotNull String key;
 

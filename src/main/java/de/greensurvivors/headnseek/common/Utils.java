@@ -1,30 +1,12 @@
 package de.greensurvivors.headnseek.common;
 
-import io.papermc.paper.math.BlockPosition;
-import io.papermc.paper.math.Position;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jspecify.annotations.NonNull;
 
 import java.util.*;
 
-@SuppressWarnings("UnstableApiUsage")
 public class Utils {
     private Utils() {
-    }
-
-    public static int getHorizontalLength(@NonNull BlockPosition upperLeft, @NonNull BlockPosition lowerRight) {
-        return Math.abs(upperLeft.blockX() - lowerRight.blockX()) + Math.abs(upperLeft.blockZ() - lowerRight.blockZ());
-    }
-
-    public static @NotNull BlockPosition deserializePosition(final @NotNull Map<String, Object> serialized) throws IllegalArgumentException {
-        if (serialized.get("x") instanceof Number x &&
-            serialized.get("y") instanceof Number y &&
-            serialized.get("z") instanceof Number z) {
-            return Position.block(x.intValue(), y.intValue(), z.intValue());
-        } else {
-            throw new IllegalArgumentException(serialized + " is not a BlockPosition!");
-        }
     }
 
     public static <T> @NotNull Collection<@NotNull T> checkCollection(final @NotNull Collection<?> input, final @NotNull Class<T> clazz) {
@@ -53,11 +35,7 @@ public class Utils {
         return result;
     }
 
-    public static @NotNull Map<@NotNull String, @NotNull Integer> serializePosition(final @NotNull Position position) {
-        return Map.of(
-            "x", position.blockX(),
-            "y", position.blockY(),
-            "z", position.blockZ()
-        );
+    public static int square(final int v) {
+        return Math.multiplyExact(v, v);
     }
 }

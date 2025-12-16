@@ -30,6 +30,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -46,7 +47,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings("UnstableApiUsage")
-public class BoardManager implements Listener { // todo clear all / near / in world boards cmd
+public class BoardManager implements Listener {
     protected final @NotNull HeadNSeek plugin;
     protected final @NotNull FileConfiguration configuration;
     protected final @NotNull Path boardsFilePath;
@@ -101,6 +102,36 @@ public class BoardManager implements Listener { // todo clear all / near / in wo
         this.definingPlayers.put(uuid, updateOld);
     }
 
+    public @Range(from = 0, to = Integer.MAX_VALUE) int removeAllBoardsNear(final @NotNull Location center, final double radius) {
+        final int oldSize = headBoards.size();
+        final @NotNull String worldName = center.getWorld().getName();
+
+        final BlockPosition centerPosition = Position.block(center);
+        headBoards.removeIf(headBoard -> headBoard.worldName.equals(worldName) &&
+            doesCubeIntersectSphere(headBoard.boundingBox, centerPosition, radius));
+
+        saveBoards();
+
+        return oldSize - headBoards.size();
+    }
+
+    public @Range(from = 0, to = Integer.MAX_VALUE) int removeAllBoardsInWorld(final @NotNull String worldName) {
+        final int oldSize = headBoards.size();
+        headBoards.removeIf(headBoard -> headBoard.worldName.equals(worldName));
+        saveBoards();
+
+        return oldSize - headBoards.size();
+    }
+
+    public @Range(from = 0, to = Integer.MAX_VALUE) int removeAllBoards() {
+        final int oldSize = headBoards.size();
+
+        headBoards.clear();
+        saveBoards();
+
+        return oldSize;
+    }
+
     @EventHandler(ignoreCancelled = true)
     protected void onHeadClick(final @NotNull PlayerInteractEvent event) {
         if (event.getAction() == Action.RIGHT_CLICK_BLOCK && event.getHand() == EquipmentSlot.HAND) {
@@ -117,42 +148,32 @@ public class BoardManager implements Listener { // todo clear all / near / in wo
                         final @NotNull String worldName = world.getName();
                         final @NotNull Vector facingDir = wallSkull.getFacing().getDirection();
 
-                        // note: fetching the location twice here is necessary since it is mutable, and we are changing it!
-                        final @NotNull BlockPosition upperLeft = findCorner(facingDir, block.getLocation(), true);
-                        final @NotNull BlockPosition lowerRight = findCorner(facingDir, block.getLocation(), false);
+                        // note: fetching the block location twice here is necessary since it is mutable, and we are changing it!
+                        final @NotNull Location upperLeft = findCorner(facingDir, block.getLocation(), true);
+                        final @NotNull Location lowerRight = findCorner(facingDir, block.getLocation(), false);
+                        final @NotNull BoundingBox boundingBox = BoundingBox.of(upperLeft, lowerRight);
 
-                        final @NotNull HeadBoard newHeadBoard = new HeadBoard(worldName, upperLeft, lowerRight,
+                        final @NotNull HeadBoard newHeadBoard = new HeadBoard(worldName,
+                            boundingBox,
                             wallSkull.getFacing(),
                             new Vector(facingDir.getZ(), 0.0D, -facingDir.getX()),
-                            Utils.getHorizontalLength(upperLeft, lowerRight));
-
-
-                        final double minX = Math.min(upperLeft.x(), lowerRight.x());
-                        final double maxX = Math.max(upperLeft.x(), lowerRight.x());
-                        final double minY = lowerRight.y();
-                        final double maxY = upperLeft.y();
-                        final double minZ = Math.min(upperLeft.z(), lowerRight.z());
-                        final double maxZ = Math.max(upperLeft.z(), lowerRight.z());
+                            (int) (boundingBox.getWidthX() + boundingBox.getWidthZ()));
 
                         boolean anyReplaced = false;
                         final @NotNull Int2ObjectMap<ResolvableProfile> oldHeads = new Int2ObjectOpenHashMap<>();
                         for (Iterator<HeadBoard> iterator = headBoards.iterator(); iterator.hasNext(); ) {
                             HeadBoard existingHeadBoard = iterator.next();
                             if (worldName.equals(existingHeadBoard.worldName) &&
-                                overlaps(minX, maxX, minY, maxY, minZ, maxZ, existingHeadBoard)) {
+                                newHeadBoard.boundingBox.overlaps(existingHeadBoard.boundingBox)) {
                                 if (newHeadBoard.facing == existingHeadBoard.facing) {
                                     iterator.remove();
                                     anyReplaced = true;
 
                                     if (updateOld) {
                                         int num = 1;
-                                        for (int y = existingHeadBoard.upperLeft.blockY(); y >= existingHeadBoard.lowerRight.blockY(); y--) {
-                                            for (int x = existingHeadBoard.upperLeft.blockX();
-                                                 Math.abs(existingHeadBoard.lowerRight.blockX() - x) >= 0;
-                                                 x += existingHeadBoard.rightDir.getBlockX()) {
-                                                for (int z = existingHeadBoard.upperLeft.blockZ();
-                                                     Math.abs(existingHeadBoard.lowerRight.blockZ() - z) >= 0;
-                                                     z += existingHeadBoard.rightDir.getBlockZ()) {
+                                        for (int y = (int) existingHeadBoard.boundingBox.getMaxY(); y >= existingHeadBoard.boundingBox.getMinY(); y--) {
+                                            for (int x = (int) existingHeadBoard.boundingBox.getMaxX(); x >= existingHeadBoard.boundingBox.getMinX(); x--) {
+                                                for (int z = (int) existingHeadBoard.boundingBox.getMaxZ(); z >= existingHeadBoard.boundingBox.getMinY(); z--) {
 
                                                     if (world.getBlockAt(x, y, z).getState(false) instanceof Skull skull) {
                                                         oldHeads.put(num, skull.getProfile());
@@ -178,14 +199,7 @@ public class BoardManager implements Listener { // todo clear all / near / in wo
                         headBoards.add(newHeadBoard);
                         definingPlayers.invalidate(uniqueId);
 
-                        try (final @NotNull Writer writer = Files.newBufferedWriter(boardsFilePath,
-                            StandardCharsets.UTF_8,
-                            StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
-
-                            writer.write(configuration.saveToString());
-                        } catch (final @NotNull IOException e) {
-                            plugin.getComponentLogger().error("Could not safe head file to disk. Data loss is imminent!", e);
-                        }
+                        saveBoards();
 
                         if (anyReplaced) {
                             plugin.getMessageManager().sendLang(player, TranslationKey.ACTION_DEFINE_BOARD_REPLACED);
@@ -200,17 +214,28 @@ public class BoardManager implements Listener { // todo clear all / near / in wo
         }
     }
 
+    protected void saveBoards() {
+        try (final @NotNull Writer writer = Files.newBufferedWriter(boardsFilePath,
+            StandardCharsets.UTF_8,
+            StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
+
+            writer.write(configuration.saveToString());
+        } catch (final @NotNull IOException e) {
+            plugin.getComponentLogger().error("Could not safe head file to disk. Data loss is imminent!", e);
+        }
+    }
+
     protected void setHeadOnBoard(final @NonNull HeadBoard headBoard, final int headNum, final ResolvableProfile profile) {
         final @Nullable World world = plugin.getServer().getWorld(headBoard.worldName);
 
         if (world != null) {
             final int mod = headNum % headBoard.length;
 
-            final int x = headBoard.upperLeft.blockX() + mod * headBoard.rightDir.getBlockX();
-            final int z = headBoard.upperLeft.blockZ() + mod * headBoard.rightDir.getBlockZ();
-            final int y = headBoard.lowerRight.blockY() + headNum / headBoard.length;
+            final int x = (int) headBoard.boundingBox.getMaxX() + mod * headBoard.rightDir.getBlockX();
+            final int y = (int) headBoard.boundingBox.getMaxY() - headNum / headBoard.length;
+            final int z = (int) headBoard.boundingBox.getMaxZ() + mod * headBoard.rightDir.getBlockZ();
 
-            WallSkull data = BlockType.PLAYER_WALL_HEAD.createBlockData();
+            final @NotNull WallSkull data = BlockType.PLAYER_WALL_HEAD.createBlockData();
             data.setFacing(headBoard.facing);
 
             world.setBlockData(x, y, z, data);
@@ -220,7 +245,7 @@ public class BoardManager implements Listener { // todo clear all / near / in wo
         }
     }
 
-    protected static @NotNull BlockPosition findCorner(final @NotNull Vector facingDir, final @NotNull Location location, final boolean upperLeft) {
+    protected static @NotNull Location findCorner(final @NotNull Vector facingDir, final @NotNull Location location, final boolean upperLeft) {
         final int sign = upperLeft ? 1 : -1;
         final @NotNull Vector direction = new Vector(-sign * facingDir.getZ(), 0.0D, sign * facingDir.getX());
         final Material PlayerWallHeadType = Registry.MATERIAL.get(BlockType.PLAYER_WALL_HEAD.getKey());
@@ -236,25 +261,32 @@ public class BoardManager implements Listener { // todo clear all / near / in wo
         while (location.add(0D, sign, 0D).getBlock().getType() == PlayerWallHeadType);
         location.subtract(0D, sign, 0D);
 
-        return Position.block(location);
+        return location;
     }
 
-    protected static boolean overlaps(final double firstMinX, final double firstMaxX,
-                                      final double firstMinY, final double firstMaxY,
-                                      final double firstMinZ, final double firstMaxZ,
-                                      final @NotNull HeadBoard headBoard) {
-        final double secondMinX = Math.min(headBoard.upperLeft.x(), headBoard.lowerRight.x());
-        final double secondMaxX = Math.max(headBoard.upperLeft.x(), headBoard.lowerRight.x());
-        final double secondMinZ = Math.min(headBoard.upperLeft.z(), headBoard.lowerRight.z());
-        final double secondMaxZ = Math.max(headBoard.upperLeft.z(), headBoard.lowerRight.z());
-
-        return firstMinX < secondMaxX && firstMaxX > secondMinX
-            && firstMinY < headBoard.upperLeft.y() && firstMaxY > headBoard.lowerRight.y()
-            && firstMinZ < secondMaxZ && firstMaxZ > secondMinZ;
+    // stolen from https://stackoverflow.com/questions/4578967/cube-sphere-intersection-test
+    protected static boolean doesCubeIntersectSphere(final @NotNull BoundingBox boundingBox, final @NotNull BlockPosition centerSphere, final double radius) {
+        double dist_squared = radius * radius;
+        if (centerSphere.blockX() < boundingBox.getMinX()) {
+            dist_squared -= Utils.square(centerSphere.blockX() - (int) boundingBox.getMinX());
+        } else if (centerSphere.blockX() > boundingBox.getMaxX()) {
+            dist_squared -= Utils.square(centerSphere.blockX() - (int) boundingBox.getMaxX());
+        }
+        if (centerSphere.blockY() < boundingBox.getMinY()) {
+            dist_squared -= Utils.square(centerSphere.blockY() - (int) boundingBox.getMinY());
+        } else if (centerSphere.y() > boundingBox.getMaxY()) {
+            dist_squared -= Utils.square(centerSphere.blockY() - (int) boundingBox.getMaxY());
+        }
+        if (centerSphere.blockZ() < boundingBox.getMinZ()) {
+            dist_squared -= Utils.square(centerSphere.blockZ() - (int) boundingBox.getMinZ());
+        } else if (centerSphere.blockZ() > boundingBox.getMaxZ()) {
+            dist_squared -= Utils.square(centerSphere.blockZ() - (int) boundingBox.getMaxZ());
+        }
+        return dist_squared > 0;
     }
 
     protected record HeadBoard(@NotNull String worldName,
-                               @NotNull BlockPosition upperLeft, @NotNull BlockPosition lowerRight,
+                               @NotNull BoundingBox boundingBox,
                                @NotNull BlockFace facing,
                                // handy little caches
                                @NotNull Vector rightDir, int length) implements ConfigurationSerializable {
@@ -270,20 +302,17 @@ public class BoardManager implements Listener { // todo clear all / near / in wo
             }
 
             if (serialized.get("worldName") instanceof String worldName &&
-                serialized.get("upperLeft") instanceof Map<?, ?> uncheckedUpperLeft &&
-                serialized.get("lowerRight") instanceof Map<?, ?> uncheckedLowerRight &&
+                serialized.get("boundingBox") instanceof BoundingBox boundingBox &&
                 serialized.get("facing") instanceof String facingName) {
 
-                final @NotNull BlockPosition upperLeft = Utils.deserializePosition(Utils.checkMap(uncheckedLowerRight, Object.class));
-                final @NotNull BlockPosition lowerRight = Utils.deserializePosition(Utils.checkMap(uncheckedLowerRight, Object.class));
                 final @NotNull BlockFace facing = BlockFace.valueOf(facingName.toLowerCase(Locale.ENGLISH));
                 final @NotNull Vector rightDir = new Vector(facing.getModZ(), 0, -facing.getModX());
 
                 return new HeadBoard(worldName,
-                    upperLeft, lowerRight,
+                    boundingBox,
                     facing,
                     rightDir,
-                    Utils.getHorizontalLength(upperLeft, lowerRight)
+                    (int) (boundingBox.getWidthX() + boundingBox.getWidthZ())
                 );
             } else {
                 throw new IllegalArgumentException(serialized + " is not a valid HeadBoard!");
@@ -295,8 +324,7 @@ public class BoardManager implements Listener { // todo clear all / near / in wo
             return Map.of(
                 "dataVersion", DATA_VERSION.toString(),
                 "worldName", worldName,
-                "upperLeft", Utils.serializePosition(upperLeft),
-                "lowerRight", Utils.serializePosition(lowerRight),
+                "boundingBox", boundingBox,
                 "facing", facing.name()
             );
         }

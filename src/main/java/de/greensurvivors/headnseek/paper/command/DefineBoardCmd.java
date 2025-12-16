@@ -3,6 +3,7 @@ package de.greensurvivors.headnseek.paper.command;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.tree.LiteralCommandNode;
 import de.greensurvivors.headnseek.paper.HeadNSeek;
 import de.greensurvivors.headnseek.paper.PermissionWrapper;
 import de.greensurvivors.headnseek.paper.language.TranslationKey;
@@ -21,8 +22,8 @@ public class DefineBoardCmd extends ACommand {
     }
 
     @Override
-    public void buildSubCmd(@NotNull LiteralArgumentBuilder<@NotNull CommandSourceStack> cmdBuilder) { // todo alias
-        cmdBuilder.then(Commands.literal(getLiteral())
+    public void buildSubCmd(final @NotNull LiteralArgumentBuilder<@NotNull CommandSourceStack> cmdBuilder) {
+        final @NotNull LiteralCommandNode<@NotNull CommandSourceStack> subRoot = Commands.literal(getLiteral())
             .requires(stack -> {
                 final @NotNull CommandSender sender = stack.getSender();
                 return sender instanceof Player && sender.hasPermission(PermissionWrapper.CMD_DEFINE_BOARD.getPermission());
@@ -43,8 +44,10 @@ public class DefineBoardCmd extends ACommand {
 
                     return Command.SINGLE_SUCCESS;
                 })
-            )
-        );
+            ).build();
+
+        cmdBuilder.then(subRoot);
+        cmdBuilder.then(Commands.literal("defbrd").redirect(subRoot));
     }
 
     @Override

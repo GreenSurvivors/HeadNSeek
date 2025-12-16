@@ -6,11 +6,14 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import de.greensurvivors.headnseek.paper.HeadNSeek;
 import de.greensurvivors.headnseek.paper.PermissionWrapper;
+import de.greensurvivors.headnseek.paper.language.PlaceHolderKey;
+import de.greensurvivors.headnseek.paper.language.TranslationKey;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.MessageComponentSerializer;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.tag.resolver.Formatter;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -34,7 +37,7 @@ public class GetCmd extends ACommand {
             .requires(stack -> {
                 final @NotNull CommandSender sender = stack.getSender();
                 return sender instanceof Player && sender.hasPermission(PermissionWrapper.CMD_GET.getPermission());
-            }).then(Commands.argument("head number", IntegerArgumentType.integer(1))
+            }).then(Commands.argument("head number", IntegerArgumentType.integer(1)) // todo suggestion?
                 .executes(context -> {
                     final int number = IntegerArgumentType.getInteger(context, "head number");
 
@@ -45,7 +48,8 @@ public class GetCmd extends ACommand {
                         final @NotNull Player player = ((Player) context.getSource().getSender());
 
                         player.give(List.of(stack), true);
-                        // todo message
+                        plugin.getMessageManager().sendLang(player, TranslationKey.CMD_GET_SUCCESS,
+                            Formatter.number(PlaceHolderKey.NUMBER.getKey(), number));
                     }
 
                     return Command.SINGLE_SUCCESS;

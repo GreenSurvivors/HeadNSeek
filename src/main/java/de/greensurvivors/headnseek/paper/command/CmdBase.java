@@ -19,6 +19,7 @@ public class CmdBase {
         registerCmdInternally(new ConfigureHeadCmd(plugin));
         registerCmdInternally(new GetCmd(plugin));
         registerCmdInternally(new DefineBoardCmd(plugin));
+        registerCmdInternally(new RemoveBoardCmd(plugin));
         registerCmdInternally(new ReloadCmd(plugin));
     }
 
@@ -38,7 +39,6 @@ public class CmdBase {
 
                 return false;
             });
-
 
         for (final @NotNull ACommand command : commands) {
             command.buildSubCmd(cmdBuilder);

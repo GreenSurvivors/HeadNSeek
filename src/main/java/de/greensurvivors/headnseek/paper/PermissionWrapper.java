@@ -15,11 +15,13 @@ public enum PermissionWrapper {
     CMD_CONFIGURE_HEAD("cmd.configure_head"),
     CMD_GET("cmd.get"),
     CMD_DEFINE_BOARD("cmd.define_board"),
+    CMD_REMOVE_BOARD("cmd.remove_board"),
     CMD_RELOAD("cmd.reload"),
     COMMANDS("cmd.*", Map.of(
         CMD_CONFIGURE_HEAD.permission.getName(), Boolean.TRUE,
         CMD_GET.permission.getName(), Boolean.TRUE,
         CMD_DEFINE_BOARD.permission.getName(), Boolean.TRUE,
+        CMD_REMOVE_BOARD.permission.getName(), Boolean.TRUE,
         CMD_RELOAD.permission.getName(), Boolean.TRUE
     )),
     MESSAGE_PLACE_HEAD_BROADCAST("message.placeHead.broadcast"),
