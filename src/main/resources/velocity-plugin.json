@@ -1,0 +1,15 @@
+{
+  "main": "de.greensurvivors.headnseek.velocity.VelocityHeadNSeek",
+  "id": "headnseek",
+  "name": "HeadNSeek",
+  "version": "${version}",
+  "authors": [
+    "GreenSurvivorsTeam"
+  ],
+  "dependencies": [
+    {
+      "id": "greensocket",
+      "optional": false
+    }
+  ]
+}

@@ -1,6 +1,8 @@
 name: HeadNSeek
-main: de.greensurvivors.headnseek.proxy.HeadNSeek
+main: de.greensurvivors.headnseek.bungee.BungeeHeadNSeek
 version: ${version}
 author: GreenSurvivorsTeam
+libraries:
+  - net.kyori:adventure-platform-bungeecord:${bungee_adventure_version}
 depends:
   - GreenSocket

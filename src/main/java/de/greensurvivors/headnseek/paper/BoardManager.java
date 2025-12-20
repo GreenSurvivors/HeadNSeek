@@ -67,8 +67,6 @@ public class BoardManager implements Listener {
         configuration.set("dataVersion", dataVersion.toString());
         configuration.set("boards", headBoards); // because this is reference based, there should be no point to ever change this
         boardsFilePath = plugin.getDataPath().resolve("headboards.yml");
-
-        plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
 
     public void reload() {

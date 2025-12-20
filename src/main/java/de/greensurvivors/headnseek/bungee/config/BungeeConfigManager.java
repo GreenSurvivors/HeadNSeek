@@ -1,7 +1,7 @@
-package de.greensurvivors.headnseek.proxy.config;
+package de.greensurvivors.headnseek.bungee.config;
 
+import de.greensurvivors.headnseek.bungee.BungeeHeadNSeek;
 import de.greensurvivors.headnseek.common.config.ConfigOption;
-import de.greensurvivors.headnseek.proxy.ProxyHeadNSeek;
 import net.md_5.bungee.config.Configuration;
 import net.md_5.bungee.config.ConfigurationProvider;
 import net.md_5.bungee.config.YamlConfiguration;
@@ -19,10 +19,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class ProxyConfigManager {
+public class BungeeConfigManager {
     protected final static @NotNull String CONFIG_FILE_NAME = "proxy-config.yml";
 
-    protected final @NotNull ProxyHeadNSeek plugin;
+    protected final @NotNull BungeeHeadNSeek plugin;
     protected final @NotNull Path dataDirectoryPath;
     protected final @NotNull Path configFilePath;
     protected final @NotNull ConfigurationProvider configProvider;
@@ -31,7 +31,7 @@ public class ProxyConfigManager {
 
     protected @NotNull Configuration config;
 
-    public ProxyConfigManager(final @NotNull ProxyHeadNSeek plugin) {
+    public BungeeConfigManager(final @NotNull BungeeHeadNSeek plugin) {
         this.plugin = plugin;
         dataDirectoryPath = plugin.getDataFolder().toPath();
         configFilePath = dataDirectoryPath.resolve(CONFIG_FILE_NAME);

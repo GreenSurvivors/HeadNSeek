@@ -67,10 +67,6 @@ public class HeadManager implements Listener {
         headConfig.options().parseComments(true);
     }
 
-    public void registerListeners() {
-        plugin.getServer().getPluginManager().registerEvents(this, plugin);
-    }
-
     public void reload() {
         heads.clear();
 

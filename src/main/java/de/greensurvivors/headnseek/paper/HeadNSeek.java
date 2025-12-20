@@ -35,7 +35,8 @@ public class HeadNSeek extends JavaPlugin {
     @Override
     public void onEnable() {
         reload();
-        headManager.registerListeners();
+        getServer().getPluginManager().registerEvents(headManager, this);
+        getServer().getPluginManager().registerEvents(boardManager, this);
 
         if (getServer().getPluginManager().isPluginEnabled("GreenSocket")) {
             proxyAdapter = new GreenSocketAdapter(this);
