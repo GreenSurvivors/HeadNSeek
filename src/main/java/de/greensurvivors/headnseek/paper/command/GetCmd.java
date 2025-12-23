@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
+@SuppressWarnings("UnstableApiUsage")
 public class GetCmd extends ACommand {
     private final static DynamicCommandExceptionType NUMBER_NOT_CONFIGURED = new DynamicCommandExceptionType(input ->
         MessageComponentSerializer.message().serialize(Component.text("Head number " + input + " was not configured!")));

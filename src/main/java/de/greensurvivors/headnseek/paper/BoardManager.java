@@ -175,7 +175,8 @@ public class BoardManager implements Listener {
                                                 for (int z = (int) existingHeadBoard.boundingBox.getMaxZ(); z > existingHeadBoard.boundingBox.getMinZ(); z--) {
 
                                                     if (world.getBlockAt(x, y, z).getState(false) instanceof Skull skull) {
-                                                        oldHeads.put(num, skull.getProfile());
+                                                      //  oldHeads.put(num, skull.getProfile());
+                                                        oldHeads.put(num, ResolvableProfile.resolvableProfile(skull.getPlayerProfile()));
                                                     }
                                                     num++;
                                                 }
@@ -268,9 +269,22 @@ public class BoardManager implements Listener {
             data.setFacing(headBoard.facing);
 
             world.setBlockData(x, y, z, data);
-            final Skull head = (Skull) world.getBlockAt(x, y, z).getState(false);
-            head.setProfile(profile);
-            head.update(true, false); // even though we are not working with a snapshot here, the state somehow needs to get updated.
+            //final Skull head = (Skull) world.getBlockAt(x, y, z).getState(false);
+            //head.setProfile(profile);
+            //head.update(true, false); // even though we are not working with a snapshot here, the state somehow needs to get updated.
+            profile.resolve().thenAcceptAsync(playerProfile -> {
+                final Block block = world.getBlockAt(x, y, z);
+
+                if (!(block.getState(false) instanceof Skull skull)){
+                    block.setType(Material.PLAYER_HEAD);
+                    Skull skull = ((Skull)block.getState(false));
+                    skull.setPlayerProfile(playerProfile);
+                    skull.update(true);
+                } else {
+                    skull.setPlayerProfile(playerProfile);
+                    skull.update(true);
+                }
+                }, plugin.getServer().getScheduler().getMainThreadExecutor(plugin));
         } else {
             plugin.getComponentLogger().warn("Could not find World named {}", headBoard.worldName);
         }

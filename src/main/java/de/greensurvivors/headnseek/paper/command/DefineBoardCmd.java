@@ -15,6 +15,7 @@ import org.bukkit.permissions.Permission;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@SuppressWarnings("UnstableApiUsage")
 public class DefineBoardCmd extends ACommand {
 
     public DefineBoardCmd(final @NotNull HeadNSeek plugin) {

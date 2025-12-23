@@ -25,6 +25,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Locale;
 
+@SuppressWarnings("UnstableApiUsage")
 public class RemoveBoardCmd extends ACommand {
     private final static SimpleCommandExceptionType ERROR_NOT_A_PLAYER = new SimpleCommandExceptionType(new LiteralMessage("Sender is not a player!"));
     private static final @NotNull DynamicCommandExceptionType ERROR_NOT_A_DOUBLE = new DynamicCommandExceptionType(input ->
