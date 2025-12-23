@@ -3,7 +3,8 @@ package de.greensurvivors.headnseek.proxy;
 import org.jetbrains.annotations.NotNull;
 
 public enum ProxyPermissionWrapper {
-    RETRIEVE_BUNGEE_MSG("retrieve_bungee_msg");
+    RETRIEVE_PROXY_MSG("retrieve_proxy_msg"),
+    ADMIN("*");
 
     private final @NotNull String permission;
 

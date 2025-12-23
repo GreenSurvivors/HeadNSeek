@@ -11,7 +11,6 @@ import de.greensurvivors.headnseek.paper.language.TranslationKey;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.MessageComponentSerializer;
-import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.Formatter;
 import org.bukkit.command.CommandSender;
@@ -24,8 +23,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 public class GetCmd extends ACommand {
-    private final static DynamicCommandExceptionType NUMBER_NOT_CONFIGURED = new DynamicCommandExceptionType(key ->
-        MessageComponentSerializer.message().serialize(Component.text("Head number " + ((Key) key).asMinimalString() + " was not configured!")));
+    private final static DynamicCommandExceptionType NUMBER_NOT_CONFIGURED = new DynamicCommandExceptionType(input ->
+        MessageComponentSerializer.message().serialize(Component.text("Head number " + input + " was not configured!")));
 
     public GetCmd(final @NotNull HeadNSeek plugin) {
         super(plugin);

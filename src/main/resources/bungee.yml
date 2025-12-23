@@ -3,6 +3,7 @@ main: de.greensurvivors.headnseek.bungee.BungeeHeadNSeek
 version: ${version}
 author: GreenSurvivorsTeam
 libraries:
-  - net.kyori:adventure-platform-bungeecord:${bungee_adventure_version}
+  - net.kyori:adventure-platform-bungeecord:${bungee_adventure_plattform_version}
+  - net.kyori:adventure-text-minimessage:${bungee_minimessage_version}
 depends:
   - GreenSocket

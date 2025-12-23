@@ -52,7 +52,7 @@ dependencies {
     // lastest release on the server will break something, this is ok.
     api("de.greensurvivors:GreenSocket:+")
     compileOnly ("com.github.ben-manes.caffeine:caffeine:${project.properties["caffeine_version"]}") // caches
-    compileOnly("net.kyori:adventure-platform-bungeecord:${project.properties["bungee_adventure_version"]}")
+    compileOnly("net.kyori:adventure-platform-bungeecord:${project.properties["bungee_adventure_plattform_version"]}")
 
     // tests
     testImplementation(platform("org.junit:junit-bom:${project.properties["junit_version"]}"))
@@ -152,12 +152,21 @@ tasks {
 
         // disable bstats, as it isn't needed for dev environment
         doFirst { // this happens after downloading the plugins above, but before the server starts
-            val cfg = runDirectory.get().asFile.resolve("plugins/bStats/config.yml")
-            if (!cfg.exists()) {
-                cfg.parentFile.mkdirs()
-                cfg.createNewFile()
+            val bStatsCfg = runDirectory.get().asFile.resolve("plugins/bStats/config.yml")
+            if (!bStatsCfg.exists()) {
+                bStatsCfg.parentFile.mkdirs()
+                bStatsCfg.createNewFile()
             }
-            cfg.writeText("enabled: false\n")
+            bStatsCfg.writeText("enabled: false\n")
+
+            // set the port to match the one configured by velocity by default ("lobby")
+            // this is preferred over changing the velocity.toml, because paper can cope better with an incomplete config file
+            val serverCfg = runDirectory.get().asFile.resolve("server.properties")
+            if (!serverCfg.exists()) {
+                serverCfg.parentFile.mkdirs()
+                serverCfg.createNewFile()
+                serverCfg.writeText("server-port=30066\n")
+            }
         }
         // automatically agree to eula
         jvmArgs("-Dcom.mojang.eula.agree=true")

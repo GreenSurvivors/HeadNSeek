@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class VelocityConfigManager {
-    protected static @NotNull String CONFIG_FILENAME = "proxy-config.yml";
+    protected static final @NotNull String CONFIG_FILENAME = "proxy-config.yml";
     protected final @NotNull VelocityHeadNSeek plugin;
     protected final @NotNull Path configFilePath;
 

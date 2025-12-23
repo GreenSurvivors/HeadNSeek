@@ -20,9 +20,8 @@ public class GreenSocketAdapter extends AProxyAdapter {
     @Override
     public void sendMessage(final @NotNull Component message) {
         if (isProxyConnected()) {
-            plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
-                    SpigotSocketApi.sendPacketToBungee(new MessagePacket(message));
-                }
+            plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () ->
+                SpigotSocketApi.sendPacketToBungee(new MessagePacket(message))
             );
         }
     }

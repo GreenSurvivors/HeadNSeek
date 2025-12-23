@@ -10,10 +10,7 @@ import io.papermc.paper.math.Position;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.apache.maven.artifact.versioning.ComparableVersion;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.Registry;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockType;
@@ -42,16 +39,15 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings("UnstableApiUsage")
 public class BoardManager implements Listener {
+    protected static final @NotNull ComparableVersion MANAGER_DATA_VERSION = new ComparableVersion("1.0.0");
     protected final @NotNull HeadNSeek plugin;
     protected final @NotNull FileConfiguration configuration;
     protected final @NotNull Path boardsFilePath;
-    protected final @NotNull ComparableVersion dataVersion = new ComparableVersion("1.0.0");
     protected final @NotNull Set<@NotNull HeadBoard> headBoards = new HashSet<>();
     protected final @NotNull Cache<@NotNull UUID, Boolean> definingPlayers = Caffeine.newBuilder()
         .expireAfterWrite(5, TimeUnit.MINUTES)
@@ -64,8 +60,7 @@ public class BoardManager implements Listener {
     public BoardManager(final @NotNull HeadNSeek plugin) {
         this.plugin = plugin;
         configuration = new YamlConfiguration();
-        configuration.set("dataVersion", dataVersion.toString());
-        configuration.set("boards", headBoards); // because this is reference based, there should be no point to ever change this
+        configuration.set("dataVersion", MANAGER_DATA_VERSION.toString());
         boardsFilePath = plugin.getDataPath().resolve("headboards.yml");
     }
 
@@ -75,6 +70,11 @@ public class BoardManager implements Listener {
         if (Files.exists(boardsFilePath)) {
             try {
                 configuration.load(Files.newBufferedReader(boardsFilePath));
+
+                final ComparableVersion foundVersion = new ComparableVersion(configuration.getString("dataVersion", ""));
+                if (foundVersion.compareTo(MANAGER_DATA_VERSION) > 0) {
+                    plugin.getComponentLogger().error("Trying to load headboards.yml and encountered newer version. Expected: \"{}\", got: \"{}\"", MANAGER_DATA_VERSION, foundVersion);
+                }
 
                 final List<?> uncheckedBoards = configuration.getList("boards");
                 if (uncheckedBoards != null) {
@@ -100,7 +100,7 @@ public class BoardManager implements Listener {
         this.definingPlayers.put(uuid, updateOld);
     }
 
-    public @Range(from = 0, to = Integer.MAX_VALUE) int removeAllBoardsNear(final @NotNull Location center, final double radius) {
+    public @Range(from = 0, to = Integer.MAX_VALUE) int removeAllBoardsNear(final @NotNull Location center, final double radius) { // todo double check
         final int oldSize = headBoards.size();
         final @NotNull String worldName = center.getWorld().getName();
 
@@ -113,7 +113,7 @@ public class BoardManager implements Listener {
         return oldSize - headBoards.size();
     }
 
-    public @Range(from = 0, to = Integer.MAX_VALUE) int removeAllBoardsInWorld(final @NotNull String worldName) {
+    public @Range(from = 0, to = Integer.MAX_VALUE) int removeAllBoardsInWorld(final @NotNull String worldName) { // todo double check
         final int oldSize = headBoards.size();
         headBoards.removeIf(headBoard -> headBoard.worldName.equals(worldName));
         saveBoards();
@@ -149,13 +149,14 @@ public class BoardManager implements Listener {
                         // note: fetching the block location twice here is necessary since it is mutable, and we are changing it!
                         final @NotNull Location upperLeft = findCorner(facingDir, block.getLocation(), true);
                         final @NotNull Location lowerRight = findCorner(facingDir, block.getLocation(), false);
-                        final @NotNull BoundingBox boundingBox = BoundingBox.of(upperLeft, lowerRight);
+                        final @NotNull BoundingBox boundingBox = BoundingBox.of(upperLeft.getBlock(), lowerRight.getBlock());
+                        final int length = calcLength(boundingBox);
 
                         final @NotNull HeadBoard newHeadBoard = new HeadBoard(worldName,
                             boundingBox,
                             wallSkull.getFacing(),
                             new Vector(facingDir.getZ(), 0.0D, -facingDir.getX()),
-                            (int) (boundingBox.getWidthX() + boundingBox.getWidthZ()));
+                            length);
 
                         boolean anyReplaced = false;
                         final @NotNull Int2ObjectMap<ResolvableProfile> oldHeads = new Int2ObjectOpenHashMap<>();
@@ -169,9 +170,9 @@ public class BoardManager implements Listener {
 
                                     if (updateOld) {
                                         int num = 1;
-                                        for (int y = (int) existingHeadBoard.boundingBox.getMaxY(); y >= existingHeadBoard.boundingBox.getMinY(); y--) {
-                                            for (int x = (int) existingHeadBoard.boundingBox.getMaxX(); x >= existingHeadBoard.boundingBox.getMinX(); x--) {
-                                                for (int z = (int) existingHeadBoard.boundingBox.getMaxZ(); z >= existingHeadBoard.boundingBox.getMinY(); z--) {
+                                        for (int y = (int) existingHeadBoard.boundingBox.getMaxY(); y > existingHeadBoard.boundingBox.getMinY(); y--) {
+                                            for (int x = (int) existingHeadBoard.boundingBox.getMaxX(); x > existingHeadBoard.boundingBox.getMinX(); x--) {
+                                                for (int z = (int) existingHeadBoard.boundingBox.getMaxZ(); z > existingHeadBoard.boundingBox.getMinZ(); z--) {
 
                                                     if (world.getBlockAt(x, y, z).getState(false) instanceof Skull skull) {
                                                         oldHeads.put(num, skull.getProfile());
@@ -196,6 +197,7 @@ public class BoardManager implements Listener {
 
                         headBoards.add(newHeadBoard);
                         definingPlayers.invalidate(uniqueId);
+                        highlightBoard(newHeadBoard);
 
                         saveBoards();
 
@@ -212,10 +214,27 @@ public class BoardManager implements Listener {
         }
     }
 
+    private static int calcLength(final @NonNull BoundingBox boundingBox) {
+        return boundingBox.getWidthX() > 1 ? (int) boundingBox.getWidthX() : (int) boundingBox.getWidthZ();
+    }
+
+    protected void highlightBoard (final @NotNull HeadBoard headBoard) { // todo just outline?
+        final @Nullable World world = plugin.getServer().getWorld(headBoard.worldName);
+
+        if (world != null) {
+            for (int y = (int) headBoard.boundingBox.getMaxY(); y > headBoard.boundingBox.getMinY(); y--) {
+                for (int x = (int) headBoard.boundingBox.getMaxX(); x > headBoard.boundingBox.getMinX(); x--) {
+                    for (int z = (int) headBoard.boundingBox.getMaxZ(); z > headBoard.boundingBox.getMinZ(); z--) {
+                        world.spawnParticle(Particle.HAPPY_VILLAGER, x - 0.5, y - 0.5, z - 0.5, 2);
+                    }
+                }
+            }
+        }
+    }
+
     protected void saveBoards() {
-        try (final @NotNull Writer writer = Files.newBufferedWriter(boardsFilePath,
-            StandardCharsets.UTF_8,
-            StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
+        try (final @NotNull Writer writer = Files.newBufferedWriter(boardsFilePath, StandardCharsets.UTF_8)) {
+            configuration.set("boards", headBoards.toArray());
 
             writer.write(configuration.saveToString());
         } catch (final @NotNull IOException e) {
@@ -223,21 +242,35 @@ public class BoardManager implements Listener {
         }
     }
 
-    protected void setHeadOnBoard(final @NonNull HeadBoard headBoard, final int headNum, final ResolvableProfile profile) {
+    protected void setHeadOnBoard(final @NonNull HeadBoard headBoard,
+                                  @Range(from = 1, to = Integer.MAX_VALUE) int headNum,
+                                  final @Nullable ResolvableProfile profile) {
+        final int boardSpace = (int) (headBoard.length * headBoard.boundingBox.getHeight());
+        if (boardSpace < headNum) {
+            plugin.getComponentLogger().info("Ignored placement of head number " + headNum + " at board at " + headBoard.worldName + " [" + headBoard.boundingBox.getMax() + "], because it was not big enough (" + boardSpace + ").");
+            return;
+        }
+
         final @Nullable World world = plugin.getServer().getWorld(headBoard.worldName);
 
         if (world != null) {
+            // the first head is assigned to number 1, but needs to get shifted to block 0
+            headNum = Math.max(0, headNum -1);
             final int mod = headNum % headBoard.length;
 
-            final int x = (int) headBoard.boundingBox.getMaxX() + mod * headBoard.rightDir.getBlockX();
-            final int y = (int) headBoard.boundingBox.getMaxY() - headNum / headBoard.length;
-            final int z = (int) headBoard.boundingBox.getMaxZ() + mod * headBoard.rightDir.getBlockZ();
+            // -1 because our bounding box is the whole block the head is in big.
+            // therefore we can't treat them like it would be Block cordinates, but shrink the box by one.
+            final int x = (int) headBoard.boundingBox.getMaxX() -1 + mod * headBoard.rightDir.getBlockX();
+            final int y = (int) headBoard.boundingBox.getMaxY() - 1 - headNum / headBoard.length;
+            final int z = (int) headBoard.boundingBox.getMaxZ() - 1+ mod * headBoard.rightDir.getBlockZ();
 
             final @NotNull WallSkull data = BlockType.PLAYER_WALL_HEAD.createBlockData();
             data.setFacing(headBoard.facing);
 
             world.setBlockData(x, y, z, data);
-            ((Skull) world.getBlockAt(x, y, z).getState(false)).setProfile(profile);
+            final Skull head = (Skull) world.getBlockAt(x, y, z).getState(false);
+            head.setProfile(profile);
+            head.update(true, false); // even though we are not working with a snapshot here, the state somehow needs to get updated.
         } else {
             plugin.getComponentLogger().warn("Could not find World named {}", headBoard.worldName);
         }
@@ -249,12 +282,12 @@ public class BoardManager implements Listener {
         final Material PlayerWallHeadType = Registry.MATERIAL.get(BlockType.PLAYER_WALL_HEAD.getKey());
 
         // we iterate until the block is no longer a player wall head. No need to do anything in loop body!
-        // left / right
+        // left / right - depending on sign
         //noinspection StatementWithEmptyBody
         while (location.add(direction).getBlock().getType() == PlayerWallHeadType);
         location.subtract(direction);
 
-        // up / down
+        // up / down - depending on sign
         //noinspection StatementWithEmptyBody
         while (location.add(0D, sign, 0D).getBlock().getType() == PlayerWallHeadType);
         location.subtract(0D, sign, 0D);
@@ -288,14 +321,14 @@ public class BoardManager implements Listener {
                                @NotNull BlockFace facing,
                                // handy little caches
                                @NotNull Vector rightDir, int length) implements ConfigurationSerializable {
-        protected final static ComparableVersion DATA_VERSION = new ComparableVersion("1.0.0");
+        protected final static @NotNull ComparableVersion BOARD_DATA_VERSION = new ComparableVersion("1.0.0");
 
         @SuppressWarnings("unused")
         public static @NotNull HeadBoard deserialize(final @NotNull Map<@NotNull String, Object> serialized) throws IllegalArgumentException {
             if (serialized.get("dataVersion") instanceof String dataVersionStr) {
                 final ComparableVersion dataVersion = new ComparableVersion(dataVersionStr);
-                if (dataVersion.compareTo(DATA_VERSION) > 0) {
-                    throw new IllegalArgumentException("Encountered newer DataVersion. Expected: \"" + DATA_VERSION + "\"; got " + dataVersion);
+                if (dataVersion.compareTo(BOARD_DATA_VERSION) > 0) {
+                    throw new IllegalArgumentException("Encountered newer DataVersion. Expected: \"" + BOARD_DATA_VERSION + "\"; got " + dataVersion);
                 }
             }
 
@@ -303,14 +336,14 @@ public class BoardManager implements Listener {
                 serialized.get("boundingBox") instanceof BoundingBox boundingBox &&
                 serialized.get("facing") instanceof String facingName) {
 
-                final @NotNull BlockFace facing = BlockFace.valueOf(facingName.toLowerCase(Locale.ENGLISH));
+                final @NotNull BlockFace facing = BlockFace.valueOf(facingName.toUpperCase(Locale.ENGLISH));
                 final @NotNull Vector rightDir = new Vector(facing.getModZ(), 0, -facing.getModX());
 
                 return new HeadBoard(worldName,
                     boundingBox,
                     facing,
                     rightDir,
-                    (int) (boundingBox.getWidthX() + boundingBox.getWidthZ())
+                    calcLength(boundingBox)
                 );
             } else {
                 throw new IllegalArgumentException(serialized + " is not a valid HeadBoard!");
@@ -320,7 +353,7 @@ public class BoardManager implements Listener {
         @Override
         public @NotNull Map<@NotNull String, Object> serialize() {
             return Map.of(
-                "dataVersion", DATA_VERSION.toString(),
+                "dataVersion", BOARD_DATA_VERSION.toString(),
                 "worldName", worldName,
                 "boundingBox", boundingBox,
                 "facing", facing.name()

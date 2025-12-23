@@ -12,6 +12,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.Formatter;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
+import org.bukkit.GameMode;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.block.Skull;
@@ -38,7 +39,6 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -104,10 +104,7 @@ public class HeadManager implements Listener {
 
         headConfig.set(String.valueOf(number), Base64.getEncoder().encodeToString(clone.serializeAsBytes()));
 
-        try (final @NotNull Writer writer = Files.newBufferedWriter(headConfigPath,
-            StandardCharsets.UTF_8,
-            StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
-
+        try (final @NotNull Writer writer = Files.newBufferedWriter(headConfigPath, StandardCharsets.UTF_8)) {
             writer.write(headConfig.saveToString());
         } catch (final @NotNull IOException e) {
             plugin.getComponentLogger().error("Could not safe head file to disk. Data loss is imminent!", e);
@@ -153,8 +150,10 @@ public class HeadManager implements Listener {
                         persistentDataContainerBockState.set(loreKey, PersistentDataType.STRING, listObj.toString());
                     }
 
-                    plugin.getServer().broadcast(plugin.getMessageManager().getLang(TranslationKey.ACTION_PLACE_HEAD_BROADCAST),
-                        PermissionWrapper.MESSAGE_PLACE_HEAD_BROADCAST.getPermission().getName());
+                    plugin.getServer().broadcast(plugin.getMessageManager().getLang(TranslationKey.ACTION_PLACE_HEAD_BROADCAST,
+                        Placeholder.component(PlaceHolderKey.PLAYER_NAME.getKey(), event.getPlayer().displayName()),
+                        Formatter.number(PlaceHolderKey.NUMBER.getKey(), headNumber)
+                        ), PermissionWrapper.MESSAGE_PLACE_HEAD_BROADCAST.getPermission().getName());
                 }
             }
         }
@@ -180,7 +179,7 @@ public class HeadManager implements Listener {
     private void onBlockDropItem(final @NotNull BlockDropItemEvent event) {
         final @NotNull Player player = event.getPlayer();
 
-        if (event.getBlockState() instanceof final Skull playerHead) {
+        if (player.getGameMode() != GameMode.CREATIVE && event.getBlockState() instanceof final Skull playerHead) {
             final @NotNull PersistentDataContainer blockPersistentDataContainer = playerHead.getPersistentDataContainer();
             final @Nullable Integer headNumber = blockPersistentDataContainer.get(numberKey, PersistentDataType.INTEGER);
 
@@ -201,11 +200,13 @@ public class HeadManager implements Listener {
                     Placeholder.unparsed(PlaceHolderKey.PLAYER_UUID.getKey(), player.getUniqueId().toString()),
                     Formatter.number(PlaceHolderKey.NUMBER.getKey(), headNumber)
                 ));
-                plugin.getProxyAdapter().sendMessage(plugin.getMessageManager().getLang(
-                    TranslationKey.POXY_MESSAGE_FOUND,
-                    Placeholder.component(PlaceHolderKey.PLAYER_NAME.getKey(), player.displayName()),
-                    Formatter.number(PlaceHolderKey.NUMBER.getKey(), headNumber)
-                ));
+                plugin.getProxyAdapter().sendMessage(Component.text()
+                    .append(plugin.getMessageManager().getLang(TranslationKey.PLUGIN_PREFIX)).appendSpace()
+                    .append(plugin.getMessageManager().getLang(
+                        TranslationKey.POXY_MESSAGE_FOUND,
+                        Placeholder.component(PlaceHolderKey.PLAYER_NAME.getKey(), player.displayName()),
+                        Formatter.number(PlaceHolderKey.NUMBER.getKey(), headNumber)
+                    )).build());
 
                 for (final @NotNull Item item : event.getItems()) {
                     final @NotNull ItemStack itemStack = item.getItemStack();
