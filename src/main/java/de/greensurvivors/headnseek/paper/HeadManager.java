@@ -8,6 +8,7 @@ import io.papermc.paper.datacomponent.item.ItemLore;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import io.papermc.paper.persistence.PersistentDataContainerView;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.Formatter;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
@@ -119,6 +120,10 @@ public class HeadManager implements Listener {
         return stack.isEmpty() ? stack : stack.clone();
     }
 
+    public @NotNull IntSet getHeadNumbers() {
+        return heads.keySet();
+    }
+
     /**
      * Tile entities do not retain the persistent data container used by this plugin when getting placed.
      * Also, they do save the lore but, it gets discarded when breaking the block and getting the item.
@@ -153,7 +158,7 @@ public class HeadManager implements Listener {
                     plugin.getServer().broadcast(plugin.getMessageManager().getLang(TranslationKey.ACTION_PLACE_HEAD_BROADCAST,
                         Placeholder.component(PlaceHolderKey.PLAYER_NAME.getKey(), event.getPlayer().displayName()),
                         Formatter.number(PlaceHolderKey.NUMBER.getKey(), headNumber)
-                        ), PermissionWrapper.MESSAGE_PLACE_HEAD_BROADCAST.getPermission().getName());
+                    ), PermissionWrapper.MESSAGE_PLACE_HEAD_BROADCAST.getPermission().getName());
                 }
             }
         }

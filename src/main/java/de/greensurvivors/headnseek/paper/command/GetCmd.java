@@ -36,8 +36,18 @@ public class GetCmd extends ACommand {
             .requires(stack -> {
                 final @NotNull CommandSender sender = stack.getSender();
                 return sender instanceof Player && sender.hasPermission(PermissionWrapper.CMD_GET.getPermission());
-            }).then(Commands.argument("head number", IntegerArgumentType.integer(1)) // todo suggestion?
-                .executes(context -> {
+            }).then(Commands.argument("head number", IntegerArgumentType.integer(1))
+                .suggests((context, suggestionsBuilder) -> {
+                    for (final int headNum : plugin.getHeadManager().getHeadNumbers()) {
+                        final @NotNull String headNumStr = String.valueOf(headNum);
+
+                        if (headNumStr.startsWith(suggestionsBuilder.getRemaining())) {
+                            suggestionsBuilder.suggest(headNum);
+                        }
+                    }
+
+                    return suggestionsBuilder.buildFuture();
+                }).executes(context -> {
                     final int number = IntegerArgumentType.getInteger(context, "head number");
 
                     final @NotNull ItemStack stack = plugin.getHeadManager().getHead(number);

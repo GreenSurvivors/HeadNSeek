@@ -24,7 +24,7 @@ public class VelocityPacketProcessor {
             plugin.getServer().filterAudience(audience ->
                 !(audience instanceof Player player) ||
                     (player.hasPermission(ProxyPermissionWrapper.RETRIEVE_PROXY_MSG.getPermission()) ||
-                     player.hasPermission(ProxyPermissionWrapper.ADMIN.getPermission())) &&
+                        player.hasPermission(ProxyPermissionWrapper.ADMIN.getPermission())) &&
                         player.getCurrentServer().
                             filter(serverConnection ->
                                 plugin.getConfigManager().shouldMessageServer(serverConnection.getServerInfo().getName())

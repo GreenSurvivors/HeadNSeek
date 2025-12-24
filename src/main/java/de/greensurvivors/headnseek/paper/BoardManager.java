@@ -100,7 +100,7 @@ public class BoardManager implements Listener {
         this.definingPlayers.put(uuid, updateOld);
     }
 
-    public @Range(from = 0, to = Integer.MAX_VALUE) int removeAllBoardsNear(final @NotNull Location center, final double radius) { // todo double check
+    public @Range(from = 0, to = Integer.MAX_VALUE) int removeAllBoardsNear(final @NotNull Location center, final double radius) {
         final int oldSize = headBoards.size();
         final @NotNull String worldName = center.getWorld().getName();
 
@@ -113,7 +113,7 @@ public class BoardManager implements Listener {
         return oldSize - headBoards.size();
     }
 
-    public @Range(from = 0, to = Integer.MAX_VALUE) int removeAllBoardsInWorld(final @NotNull String worldName) { // todo double check
+    public @Range(from = 0, to = Integer.MAX_VALUE) int removeAllBoardsInWorld(final @NotNull String worldName) {
         final int oldSize = headBoards.size();
         headBoards.removeIf(headBoard -> headBoard.worldName.equals(worldName));
         saveBoards();
@@ -218,7 +218,7 @@ public class BoardManager implements Listener {
         return boundingBox.getWidthX() > 1 ? (int) boundingBox.getWidthX() : (int) boundingBox.getWidthZ();
     }
 
-    protected void highlightBoard (final @NotNull HeadBoard headBoard) { // todo just outline?
+    protected void highlightBoard(final @NotNull HeadBoard headBoard) { // todo just outline?
         final @Nullable World world = plugin.getServer().getWorld(headBoard.worldName);
 
         if (world != null) {
@@ -255,14 +255,14 @@ public class BoardManager implements Listener {
 
         if (world != null) {
             // the first head is assigned to number 1, but needs to get shifted to block 0
-            headNum = Math.max(0, headNum -1);
+            headNum = Math.max(0, headNum - 1);
             final int mod = headNum % headBoard.length;
 
             // -1 because our bounding box is the whole block the head is in big.
             // therefore we can't treat them like it would be Block cordinates, but shrink the box by one.
-            final int x = (int) headBoard.boundingBox.getMaxX() -1 + mod * headBoard.rightDir.getBlockX();
+            final int x = (int) headBoard.boundingBox.getMaxX() - 1 + mod * headBoard.rightDir.getBlockX();
             final int y = (int) headBoard.boundingBox.getMaxY() - 1 - headNum / headBoard.length;
-            final int z = (int) headBoard.boundingBox.getMaxZ() - 1+ mod * headBoard.rightDir.getBlockZ();
+            final int z = (int) headBoard.boundingBox.getMaxZ() - 1 + mod * headBoard.rightDir.getBlockZ();
 
             final @NotNull WallSkull data = BlockType.PLAYER_WALL_HEAD.createBlockData();
             data.setFacing(headBoard.facing);
