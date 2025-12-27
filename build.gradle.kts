@@ -1,6 +1,6 @@
 plugins {
     `java-library`
-    id("io.papermc.paperweight.userdev") version "2.0.0-beta.18" // note: beta.19 is dependent on Gradle 9 and somehow that breaks library loading in runetime. Based on past experience Gradle 9 is horribly broken!
+    id("io.papermc.paperweight.userdev") version "2.0.0-beta.19"
     id("xyz.jpenilla.run-paper") version "3.0.2"
     id("xyz.jpenilla.run-waterfall") version "3.0.2"
     id("xyz.jpenilla.run-velocity") version "3.0.2"
@@ -19,6 +19,7 @@ version = buildString {
 }
 
 // don't reobfuscate, use mojang mapping.
+// todo remove with mc version 26.1
 paperweight.reobfArtifactConfiguration = io.papermc.paperweight.userdev.ReobfArtifactConfiguration.MOJANG_PRODUCTION
 
 java {
@@ -55,9 +56,9 @@ dependencies {
     compileOnly("net.kyori:adventure-platform-bungeecord:${project.properties["bungee_adventure_plattform_version"]}")
 
     // tests
-    testImplementation(platform("org.junit:junit-bom:${project.properties["junit_version"]}"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+//    testImplementation(platform("org.junit:junit-bom:${project.properties["junit_version"]}"))
+//    testImplementation("org.junit.jupiter:junit-jupiter")
+//    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 sourceSets {
@@ -65,7 +66,7 @@ sourceSets {
         classTokenReplacer {
             project.properties.entries
                 .filter { it.value != null && (it.value is Number || it.value is String) }
-                .associate {"\${${it.key}}" to it.value!! }
+                .associate { $$"${$${it.key}}" to it.value!! }
                 .forEach {
                     property(it.key, it.value)
                 }
@@ -92,9 +93,9 @@ tasks {
         options.release = project.properties["java_version"].toString().toInt()
     }
 
-    test {
-        useJUnitPlatform()
-    }
+//    test {
+//        useJUnitPlatform()
+//    }
 
     runWaterfall {
         waterfallVersion(project.properties["waterfall_version"] as String)

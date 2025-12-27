@@ -22,12 +22,12 @@ public class Utils {
         return result;
     }
 
+    @SuppressWarnings("unchecked") // it is checked, that's the whole point. Shut up!
     public static <T> @NotNull Map<@NotNull String, @NotNull T> checkMap(final @NotNull Map<?, ?> input, final @NotNull Class<T> clazz) {
         final @NotNull Map<@NotNull String, @NotNull T> result = new HashMap<>(input.size());
 
         for (final @NotNull Map.Entry<?, ?> entry : input.entrySet()) {
             if (entry.getKey() instanceof String key && clazz.isInstance(entry.getValue())) {
-                //noinspection unchecked
                 result.put(key, (T) entry.getValue());
             }
         }
