@@ -199,12 +199,14 @@ public class HeadManager implements Listener {
 
                 plugin.getMessageManager().sendLang(player, TranslationKey.ACTION_FOUND,
                     Formatter.number(PlaceHolderKey.NUMBER.getKey(), headNumber));
-                plugin.getSocialAdapter().sendMessage(plugin.getMessageManager().getLang(
+                final @NotNull Component socialMessage = plugin.getMessageManager().getLang(
                     TranslationKey.SOCIAL_MESSAGE_FOUND,
                     Placeholder.component(PlaceHolderKey.PLAYER_NAME.getKey(), player.displayName()),
                     Placeholder.unparsed(PlaceHolderKey.PLAYER_UUID.getKey(), player.getUniqueId().toString()),
                     Formatter.number(PlaceHolderKey.NUMBER.getKey(), headNumber)
-                ));
+                );
+                plugin.getSocialAdapter().sendMessage(socialMessage);
+                plugin.getFileLogger().log(socialMessage);
                 plugin.getProxyAdapter().sendMessage(Component.text()
                     .append(plugin.getMessageManager().getLang(TranslationKey.PLUGIN_PREFIX)).appendSpace()
                     .append(plugin.getMessageManager().getLang(

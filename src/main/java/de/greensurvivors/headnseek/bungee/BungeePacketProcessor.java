@@ -2,7 +2,7 @@ package de.greensurvivors.headnseek.bungee;
 
 import de.greensurvivors.greensocket.bungee.event.ReceivedPacketEvent;
 import de.greensurvivors.headnseek.common.network.MessagePacket;
-import de.greensurvivors.headnseek.proxy.ProxyPermissionWrapper;
+import de.greensurvivors.headnseek.common.ProxyPermissionWrapper;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.connection.ProxiedPlayer;

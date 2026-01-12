@@ -60,7 +60,6 @@ public class BungeeConfigManager {
             try {
                 config = configProvider.load(configFilePath.toFile(), config);
 
-
                 final @Nullable List<?> serverToMessageList = config.getList(serverToMessage.getPath(), null);
                 final @Nullable Set<@NotNull String> serverToMessageSet;
 

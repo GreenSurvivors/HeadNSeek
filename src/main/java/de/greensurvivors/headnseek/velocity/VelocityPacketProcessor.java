@@ -4,7 +4,7 @@ import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.proxy.Player;
 import de.greensurvivors.greensocket.velocity.event.ReceivedPacketEvent;
 import de.greensurvivors.headnseek.common.network.MessagePacket;
-import de.greensurvivors.headnseek.proxy.ProxyPermissionWrapper;
+import de.greensurvivors.headnseek.common.ProxyPermissionWrapper;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.jetbrains.annotations.NotNull;
 
