@@ -20,6 +20,7 @@ public class HeadNSeek extends JavaPlugin {
     private final @NotNull HeadManager headManager;
     private final @NotNull CmdBase cmdBase;
     private final @NotNull BoardManager boardManager;
+    private final @NotNull FileLogger fileLogger;
     private @NotNull ASocialAdapter socialAdapter = ASocialAdapterType.DUMMY.createNew(this);
     private @NotNull AProxyAdapter proxyAdapter;
 
@@ -30,6 +31,7 @@ public class HeadNSeek extends JavaPlugin {
         proxyAdapter = new DummyAdapter(this);
         cmdBase = new CmdBase(this);
         boardManager = new BoardManager(this);
+        fileLogger = new FileLogger(this);
     }
 
     @Override
@@ -44,6 +46,11 @@ public class HeadNSeek extends JavaPlugin {
 
         final LifecycleEventManager<Plugin> lifecycleManager = this.getLifecycleManager();
         lifecycleManager.registerEventHandler(LifecycleEvents.COMMANDS, cmdBase::onCmdServerRegistration);
+    }
+
+    @Override
+    public void onDisable() {
+        fileLogger.close();
     }
 
     public void reload() {
@@ -77,5 +84,9 @@ public class HeadNSeek extends JavaPlugin {
 
     public @NotNull BoardManager getBoardManager() {
         return boardManager;
+    }
+
+    public @NotNull FileLogger getFileLogger() {
+        return fileLogger;
     }
 }

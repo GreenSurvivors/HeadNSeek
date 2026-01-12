@@ -1,4 +1,4 @@
-package de.greensurvivors.headnseek.proxy;
+package de.greensurvivors.headnseek.common;
 
 import org.jetbrains.annotations.NotNull;
 
