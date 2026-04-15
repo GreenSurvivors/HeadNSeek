@@ -20,8 +20,6 @@ public class BungeePacketProcessor implements Listener {
     @EventHandler
     public void onPacketEvent(final @NotNull ReceivedPacketEvent event) {
         if (event.getPacket() instanceof MessagePacket msgPacket) {
-            ProxyServer.getInstance().broadcast();
-
             plugin.getBungeeAudiences().filter(commandSender ->
                 // all audience that are either a server themselves (as far as I know just the proxy we are on)
                 // or a player with permission, and on a server that should be configured.
