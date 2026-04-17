@@ -9,6 +9,7 @@ import io.papermc.paper.math.BlockPosition;
 import io.papermc.paper.math.Position;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import net.kyori.adventure.key.Key;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -102,10 +103,10 @@ public class BoardManager implements Listener {
 
     public @Range(from = 0, to = Integer.MAX_VALUE) int removeAllBoardsNear(final @NotNull Location center, final double radius) {
         final int oldSize = headBoards.size();
-        final @NotNull String worldName = center.getWorld().getName();
+        final @NotNull Key worldKey = center.getWorld().getKey();
 
         final BlockPosition centerPosition = Position.block(center);
-        headBoards.removeIf(headBoard -> headBoard.worldName.equals(worldName) &&
+        headBoards.removeIf(headBoard -> headBoard.worldKey.equals(worldKey) &&
             doesCubeIntersectSphere(headBoard.boundingBox, centerPosition, radius));
 
         saveBoards();
@@ -113,9 +114,9 @@ public class BoardManager implements Listener {
         return oldSize - headBoards.size();
     }
 
-    public @Range(from = 0, to = Integer.MAX_VALUE) int removeAllBoardsInWorld(final @NotNull String worldName) {
+    public @Range(from = 0, to = Integer.MAX_VALUE) int removeAllBoardsInWorld(final @NotNull Key worldKey) {
         final int oldSize = headBoards.size();
-        headBoards.removeIf(headBoard -> headBoard.worldName.equals(worldName));
+        headBoards.removeIf(headBoard -> headBoard.worldKey.equals(worldKey));
         saveBoards();
 
         return oldSize - headBoards.size();
@@ -143,7 +144,7 @@ public class BoardManager implements Listener {
                     if (block.getBlockData() instanceof WallSkull wallSkull) {
                         event.setCancelled(true);
                         final @NotNull World world = block.getWorld();
-                        final @NotNull String worldName = world.getName();
+                        final @NotNull Key worldKey = world.getKey();
                         final @NotNull Vector facingDir = wallSkull.getFacing().getDirection();
 
                         // note: fetching the block location twice here is necessary since it is mutable, and we are changing it!
@@ -152,7 +153,7 @@ public class BoardManager implements Listener {
                         final @NotNull BoundingBox boundingBox = BoundingBox.of(upperLeft.getBlock(), lowerRight.getBlock());
                         final int length = calcLength(boundingBox);
 
-                        final @NotNull HeadBoard newHeadBoard = new HeadBoard(worldName,
+                        final @NotNull HeadBoard newHeadBoard = new HeadBoard(worldKey,
                             boundingBox,
                             wallSkull.getFacing(),
                             new Vector(facingDir.getZ(), 0.0D, -facingDir.getX()),
@@ -162,7 +163,7 @@ public class BoardManager implements Listener {
                         final @NotNull Int2ObjectMap<ResolvableProfile> oldHeads = new Int2ObjectOpenHashMap<>();
                         for (Iterator<HeadBoard> iterator = headBoards.iterator(); iterator.hasNext(); ) {
                             HeadBoard existingHeadBoard = iterator.next();
-                            if (worldName.equals(existingHeadBoard.worldName) &&
+                            if (worldKey.equals(existingHeadBoard.worldKey) &&
                                 newHeadBoard.boundingBox.overlaps(existingHeadBoard.boundingBox)) {
                                 if (newHeadBoard.facing == existingHeadBoard.facing) {
                                     iterator.remove();
@@ -219,7 +220,7 @@ public class BoardManager implements Listener {
     }
 
     protected void highlightBoard(final @NotNull HeadBoard headBoard) { // todo just outline?
-        final @Nullable World world = plugin.getServer().getWorld(headBoard.worldName);
+        final @Nullable World world = plugin.getServer().getWorld(headBoard.worldKey);
 
         if (world != null) {
             for (int y = (int) headBoard.boundingBox.getMaxY(); y > headBoard.boundingBox.getMinY(); y--) {
@@ -247,11 +248,11 @@ public class BoardManager implements Listener {
                                   final @Nullable ResolvableProfile profile) {
         final int boardSpace = (int) (headBoard.length * headBoard.boundingBox.getHeight());
         if (boardSpace < headNum) {
-            plugin.getComponentLogger().info("Ignored placement of head number " + headNum + " at board at " + headBoard.worldName + " [" + headBoard.boundingBox.getMax() + "], because it was not big enough (" + boardSpace + ").");
+            plugin.getComponentLogger().info("Ignored placement of head number " + headNum + " at board at " + headBoard.worldKey + " [" + headBoard.boundingBox.getMax() + "], because it was not big enough (" + boardSpace + ").");
             return;
         }
 
-        final @Nullable World world = plugin.getServer().getWorld(headBoard.worldName);
+        final @Nullable World world = plugin.getServer().getWorld(headBoard.worldKey);
 
         if (world != null) {
             // the first head is assigned to number 1, but needs to get shifted to block 0
@@ -272,7 +273,7 @@ public class BoardManager implements Listener {
             head.setProfile(profile);
             head.update(true, false); // even though we are not working with a snapshot here, the state somehow needs to get updated.
         } else {
-            plugin.getComponentLogger().warn("Could not find World named {}", headBoard.worldName);
+            plugin.getComponentLogger().warn("Could not find World named {}", headBoard.worldKey);
         }
     }
 
@@ -316,7 +317,7 @@ public class BoardManager implements Listener {
         return dist_squared > 0;
     }
 
-    protected record HeadBoard(@NotNull String worldName,
+    protected record HeadBoard(@NotNull Key worldKey,
                                @NotNull BoundingBox boundingBox,
                                @NotNull BlockFace facing,
                                // handy little caches
@@ -332,14 +333,14 @@ public class BoardManager implements Listener {
                 }
             }
 
-            if (serialized.get("worldName") instanceof String worldName &&
+            if (serialized.get("world") instanceof String keyStr && Key.parseable(keyStr) &&
                 serialized.get("boundingBox") instanceof BoundingBox boundingBox &&
                 serialized.get("facing") instanceof String facingName) {
 
                 final @NotNull BlockFace facing = BlockFace.valueOf(facingName.toUpperCase(Locale.ENGLISH));
                 final @NotNull Vector rightDir = new Vector(facing.getModZ(), 0, -facing.getModX());
 
-                return new HeadBoard(worldName,
+                return new HeadBoard(Key.key(keyStr),
                     boundingBox,
                     facing,
                     rightDir,
@@ -354,7 +355,7 @@ public class BoardManager implements Listener {
         public @NotNull Map<@NotNull String, Object> serialize() {
             return Map.of(
                 "dataVersion", BOARD_DATA_VERSION.toString(),
-                "worldName", worldName,
+                "world", worldKey,
                 "boundingBox", boundingBox,
                 "facing", facing.name()
             );
