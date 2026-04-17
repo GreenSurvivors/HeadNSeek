@@ -45,11 +45,15 @@ public class FileLogger implements Closeable {
         final @NotNull String formattedLine = format.format(new Object[] {Instant.now(), PlainTextComponentSerializer.plainText().serialize(message)});
 
         if (fileChannel != null) {
-            try {
-                fileChannel.write(ByteBuffer.wrap(formattedLine.getBytes(StandardCharsets.UTF_8)), 0).get(1, TimeUnit.MINUTES);
-            } catch (final @NotNull InterruptedException | ExecutionException | TimeoutException e) {
-                plugin.getComponentLogger().error("Could not log line \"{}\" to file {}", message, pathToFile, e);
-            }
+            // spawn a virtual thread just to have a thread to wait 1 minute to time out
+            // NOTE: UNTIL JAVA 24+ THIS WILL PIN A OS THREAD DOWN!
+            Thread.startVirtualThread(() -> {
+                try {
+                    fileChannel.write(ByteBuffer.wrap(formattedLine.getBytes(StandardCharsets.UTF_8)), 0).get(1, TimeUnit.MINUTES);
+                } catch (final @NotNull InterruptedException | ExecutionException | TimeoutException e) {
+                    plugin.getComponentLogger().error("Could not log line \"{}\" to file {}", message, pathToFile, e);
+                }
+            });
         } else {
             plugin.getComponentLogger().warn(formattedLine);
         }
