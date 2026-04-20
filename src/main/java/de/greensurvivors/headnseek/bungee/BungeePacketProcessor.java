@@ -4,7 +4,6 @@ import de.greensurvivors.greensocket.bungee.event.ReceivedPacketEvent;
 import de.greensurvivors.headnseek.common.network.MessagePacket;
 import de.greensurvivors.headnseek.common.ProxyPermissionWrapper;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.event.EventHandler;

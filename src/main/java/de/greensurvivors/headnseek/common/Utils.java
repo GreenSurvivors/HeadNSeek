@@ -35,7 +35,7 @@ public class Utils {
         return result;
     }
 
-    public static int square(final int v) {
+    public static int square(final int v) throws ArithmeticException { // NumberConversions.square()
         return Math.multiplyExact(v, v);
     }
 }

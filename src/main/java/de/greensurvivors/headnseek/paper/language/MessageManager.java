@@ -6,7 +6,6 @@ import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
-import net.kyori.adventure.util.UTF8ResourceBundleControl;
 import org.apache.commons.io.FileUtils;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
@@ -64,17 +63,17 @@ public class MessageManager {
         URL[] urls;
         try {
             urls = new URL[]{langDictionary.toURI().toURL()};
-            lang = ResourceBundle.getBundle(BUNDLE_NAME, locale, new URLClassLoader(urls), UTF8ResourceBundleControl.utf8ResourceBundleControl());
+            lang = ResourceBundle.getBundle(BUNDLE_NAME, locale, new URLClassLoader(urls));
 
         } catch (SecurityException | MalformedURLException e) {
             plugin.getComponentLogger().warn("Exception while reading lang bundle. Using internal", e);
         } catch (MissingResourceException ignored) { // how? missing write access?
-            plugin.getComponentLogger().warn("No translation file for {} found on disc. Using internal", UTF8ResourceBundleControl.utf8ResourceBundleControl().toBundleName(BUNDLE_NAME, locale));
+            plugin.getComponentLogger().warn("No translation file for {} found on disc. Using internal", locale.toLanguageTag());
         }
 
         if (lang == null) { // fallback, since we are always trying to save defaults this never should happen
             try {
-                lang = PropertyResourceBundle.getBundle(BUNDLE_NAME, locale, plugin.getClass().getClassLoader(), UTF8ResourceBundleControl.utf8ResourceBundleControl());
+                lang = PropertyResourceBundle.getBundle(BUNDLE_NAME, locale, plugin.getClass().getClassLoader());
             } catch (MissingResourceException e) {
                 plugin.getComponentLogger().error("Couldn't get Ressource bundle \"lang\" for locale \"{}\". Messages WILL be broken!", locale.toLanguageTag(), e);
             }
