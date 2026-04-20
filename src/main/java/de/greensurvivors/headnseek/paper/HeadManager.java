@@ -89,7 +89,7 @@ public class HeadManager implements Listener {
                     }
                 }
             } catch (IOException | InvalidConfigurationException e) {
-                plugin.getComponentLogger().error("Couldn't load head storage file!", e);
+                plugin.getComponentLogger().error("Couldn't load board file!", e);
             }
         }
     }

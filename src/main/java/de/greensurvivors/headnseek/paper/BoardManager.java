@@ -355,7 +355,7 @@ public class BoardManager implements Listener {
         public @NotNull Map<@NotNull String, Object> serialize() {
             return Map.of(
                 "dataVersion", BOARD_DATA_VERSION.toString(),
-                "world", worldKey,
+                "world", worldKey.asString(),
                 "boundingBox", boundingBox,
                 "facing", facing.name()
             );

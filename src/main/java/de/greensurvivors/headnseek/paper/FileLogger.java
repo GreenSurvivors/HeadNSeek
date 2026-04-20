@@ -9,14 +9,14 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
+import java.nio.channels.CompletionHandler;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.text.MessageFormat;
 import java.time.Instant;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.Date;
+import java.util.concurrent.atomic.AtomicLong;
 
 // note: decided to go with nio instead of any logger framework since it seemed to be way easier
 public class FileLogger implements Closeable {
@@ -25,13 +25,17 @@ public class FileLogger implements Closeable {
     protected final @NotNull MessageFormat format = new MessageFormat("[{0,time,dd.MM.yyyy HH:mm:ss}] {1}\n");
     protected final @NotNull HeadNSeek plugin;
     protected @Nullable AsynchronousFileChannel fileChannel;
+    protected final @NotNull AtomicLong bytePosition = new AtomicLong(0);
+    protected final @NotNull LoggingCompletionHandler completionHandler = new LoggingCompletionHandler();
 
     public FileLogger(final @NotNull HeadNSeek plugin) {
         this.plugin = plugin;
 
         pathToFile = plugin.getDataPath().resolve("foundHeads.log");
         try {
-            fileChannel = AsynchronousFileChannel.open(pathToFile, StandardOpenOption.WRITE, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+            fileChannel = AsynchronousFileChannel.open(pathToFile, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
+            bytePosition.set(fileChannel.size());
+
         } catch (final @NotNull IOException e) {
             plugin.getComponentLogger().error("Couldn't open log file!", e);
 
@@ -42,18 +46,12 @@ public class FileLogger implements Closeable {
     }
 
     public void log(final @NotNull Component message) {
-        final @NotNull String formattedLine = format.format(new Object[] {Instant.now(), PlainTextComponentSerializer.plainText().serialize(message)});
+        // thanks java for not allowing modern time api in formats
+        // note: you also could do System.currentTimeMillis() or Instant.now().toEpochMilli() - just wanted to keep time unit attached for no reason at all
+        final @NotNull String formattedLine = format.format(new Object[] {Date.from(Instant.now()), PlainTextComponentSerializer.plainText().serialize(message)});
 
         if (fileChannel != null) {
-            // spawn a virtual thread just to have a thread to wait 1 minute to time out
-            // NOTE: UNTIL JAVA 24+ THIS WILL PIN A OS THREAD DOWN!
-            Thread.startVirtualThread(() -> {
-                try {
-                    fileChannel.write(ByteBuffer.wrap(formattedLine.getBytes(StandardCharsets.UTF_8)), 0).get(1, TimeUnit.MINUTES);
-                } catch (final @NotNull InterruptedException | ExecutionException | TimeoutException e) {
-                    plugin.getComponentLogger().error("Could not log line \"{}\" to file {}", message, pathToFile, e);
-                }
-            });
+            fileChannel.write(ByteBuffer.wrap(formattedLine.getBytes(StandardCharsets.UTF_8)), bytePosition.get(), formattedLine, completionHandler);
         } else {
             plugin.getComponentLogger().warn(formattedLine);
         }
@@ -66,6 +64,18 @@ public class FileLogger implements Closeable {
             } catch (final @NotNull IOException e) {
                 plugin.getComponentLogger().error("Could not close log file writer for file {}", pathToFile, e);
             }
+        }
+    }
+
+    protected class LoggingCompletionHandler implements CompletionHandler<@NotNull Integer, @NotNull String> {
+        @Override
+        public void completed(final @NotNull Integer bytesWritten, final @Nullable String lineToLog) {
+            bytePosition.getAndAdd(bytesWritten);
+        }
+
+        @Override
+        public void failed(final @NotNull Throwable exc, final @NotNull String lineToLog) {
+            plugin.getComponentLogger().error("Couldn't write \"" + lineToLog + "\" to log file!", exc);
         }
     }
 }
