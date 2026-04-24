@@ -1,2 +1,3 @@
+# Wildchar * means all servers
 serverToMessage:
-  - "lobby"
+  - "*"

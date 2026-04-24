@@ -2,6 +2,7 @@ package de.greensurvivors.headnseek.bungee.config;
 
 import de.greensurvivors.headnseek.bungee.BungeeHeadNSeek;
 import de.greensurvivors.headnseek.common.config.ConfigOption;
+import de.greensurvivors.headnseek.common.config.IProxyConfigManager;
 import net.md_5.bungee.config.Configuration;
 import net.md_5.bungee.config.ConfigurationProvider;
 import net.md_5.bungee.config.YamlConfiguration;
@@ -19,7 +20,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class BungeeConfigManager {
+public class BungeeConfigManager implements IProxyConfigManager {
     protected final static @NotNull String CONFIG_FILE_NAME = "proxy-config.yml";
 
     protected final @NotNull BungeeHeadNSeek plugin;
@@ -28,6 +29,7 @@ public class BungeeConfigManager {
     protected final @NotNull ConfigurationProvider configProvider;
 
     private final @NotNull ConfigOption<Set<String>> serverToMessage = new ConfigOption<>("serverToMessage", Collections.emptySet());
+    private boolean allServersInNetwork = false;
 
     protected @NotNull Configuration config;
 
@@ -47,44 +49,51 @@ public class BungeeConfigManager {
         }
     }
 
+    @Override
     public void reload() {
-        if (!Files.isRegularFile(configFilePath)) {
+        allServersInNetwork = false;
 
+        if (!Files.isRegularFile(configFilePath)) {
             try {
                 Files.createDirectories(dataDirectoryPath);
                 configProvider.save(config, configFilePath.toFile());
             } catch (final IOException e) {
                 plugin.getSLF4JLogger().warn("Could not save default config", e);
             }
-        } else {
-            try {
-                config = configProvider.load(configFilePath.toFile(), config);
+        }
+        try {
+            config = configProvider.load(configFilePath.toFile(), config);
 
-                final @Nullable List<?> serverToMessageList = config.getList(serverToMessage.getPath(), null);
-                final @Nullable Set<@NotNull String> serverToMessageSet;
+            final @Nullable List<?> serverToMessageList = config.getList(serverToMessage.getPath(), null);
+            final @Nullable Set<@NotNull String> serverToMessageSet;
 
-                if (serverToMessageList != null && !serverToMessageList.isEmpty()) {
-                    serverToMessageSet = new HashSet<>();
+            if (serverToMessageList != null && !serverToMessageList.isEmpty()) {
+                serverToMessageSet = new HashSet<>();
 
-                    for (final @NotNull Object serverNameObj : serverToMessageList) {
-                        if (serverNameObj instanceof String serverName) {
+                for (final @NotNull Object serverNameObj : serverToMessageList) {
+                    if (serverNameObj instanceof String serverName) {
+                        if (serverName.trim().equals("*")) {
+                            allServersInNetwork = true;
+                            break;
+                        } else {
                             serverToMessageSet.add(serverName);
                         }
                     }
-                } else {
-                    serverToMessageSet = null;
                 }
-
-                if (serverToMessageSet != null && !serverToMessageSet.isEmpty()) {
-                    serverToMessage.setValue(serverToMessageSet);
-                }
-            } catch (IOException e) {
-                plugin.getSLF4JLogger().warn("Could not load config", e);
+            } else {
+                serverToMessageSet = null;
             }
+
+            if (serverToMessageSet != null && !serverToMessageSet.isEmpty()) {
+                serverToMessage.setValue(serverToMessageSet);
+            }
+        } catch (final @NotNull IOException e) {
+            plugin.getSLF4JLogger().warn("Could not load config", e);
         }
     }
 
+    @Override
     public boolean shouldMessageServer(final @NotNull String serverName) {
-        return serverToMessage.getValueOrFallback().contains(serverName);
+        return allServersInNetwork || serverToMessage.getValueOrFallback().contains(serverName);
     }
 }

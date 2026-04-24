@@ -2,6 +2,7 @@ package de.greensurvivors.headnseek.velocity.config;
 
 import de.greensurvivors.headnseek.common.Utils;
 import de.greensurvivors.headnseek.common.config.ConfigOption;
+import de.greensurvivors.headnseek.common.config.IProxyConfigManager;
 import de.greensurvivors.headnseek.velocity.VelocityHeadNSeek;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -18,19 +19,23 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
-public class VelocityConfigManager {
+public class VelocityConfigManager implements IProxyConfigManager {
     protected static final @NotNull String CONFIG_FILENAME = "proxy-config.yml";
     protected final @NotNull VelocityHeadNSeek plugin;
     protected final @NotNull Path configFilePath;
 
     private final @NotNull ConfigOption<Set<String>> serverToMessage = new ConfigOption<>("serverToMessage", Collections.emptySet());
+    private boolean allServersInNetwork = false;
 
     public VelocityConfigManager(final @NotNull VelocityHeadNSeek plugin) {
         this.plugin = plugin;
         configFilePath = plugin.getDataDirectoryPath().resolve(CONFIG_FILENAME);
     }
 
+    @Override
     public void reload() {
+        allServersInNetwork = false;
+
         // create data folder is not exists
         if (!Files.isDirectory(plugin.getDataDirectoryPath())) {
             try {
@@ -62,12 +67,17 @@ public class VelocityConfigManager {
             if (checkedConfigMap.get(serverToMessage.getPath()) instanceof final @NotNull Collection<?> rawServerToMessage) {
                 serverToMessage.setValue(Set.copyOf(Utils.checkCollection(rawServerToMessage, String.class)));
             }
+
+            if (serverToMessage.getValueOrFallback().contains("*")) {
+                allServersInNetwork = true;
+            }
         } catch (final @NotNull IOException e) {
             plugin.getLogger().error("Could not read config file!", e);
         }
     }
 
+    @Override
     public boolean shouldMessageServer(final @NotNull String serverName) {
-        return serverToMessage.getValueOrFallback().contains(serverName);
+        return allServersInNetwork || serverToMessage.getValueOrFallback().contains(serverName);
     }
 }
