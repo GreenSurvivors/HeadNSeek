@@ -1,7 +1,6 @@
 package de.greensurvivors.headnseek.paper.command;
 
 import com.mojang.brigadier.Command;
-import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import de.greensurvivors.headnseek.paper.HeadNSeek;
@@ -30,21 +29,11 @@ public class DefineBoardCmd extends ACommand {
             }).executes(context -> {
                 final @NotNull Player player = (Player) context.getSource().getSender();
 
-                plugin.getBoardManager().registerForDefining(player.getUniqueId(), false);
+                plugin.getBoardManager().registerForDefining(player.getUniqueId());
                 plugin.getMessageManager().sendLang(player, TranslationKey.CMD_DEFINE_BOARD_START);
 
                 return Command.SINGLE_SUCCESS;
-            }).then(Commands.argument("should update overlapping boards", BoolArgumentType.bool())
-                .executes(context -> {
-                    final @NotNull Boolean updateOld = BoolArgumentType.getBool(context, "should update overlapping boards");
-                    final @NotNull Player player = (Player) context.getSource().getSender();
-
-                    plugin.getBoardManager().registerForDefining(player.getUniqueId(), updateOld);
-                    plugin.getMessageManager().sendLang(player, TranslationKey.CMD_DEFINE_BOARD_START);
-
-                    return Command.SINGLE_SUCCESS;
-                })
-            ).build();
+            }).build();
 
         cmdBuilder.then(subRoot);
         cmdBuilder.then(Commands.literal("defbrd").redirect(subRoot));

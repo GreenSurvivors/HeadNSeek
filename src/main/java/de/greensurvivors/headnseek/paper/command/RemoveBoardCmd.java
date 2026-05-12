@@ -177,6 +177,7 @@ public class RemoveBoardCmd extends ACommand {
         final @NotNull LiteralCommandNode<@NotNull CommandSourceStack> subCmdRoot = subCmdRootBuilder.build();
 
         cmdBuilder.then(subCmdRoot);
+        cmdBuilder.then(Commands.literal("rmvbrd").redirect(subCmdRoot));
     }
 
     @Override

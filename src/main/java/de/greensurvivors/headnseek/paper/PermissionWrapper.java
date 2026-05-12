@@ -2,14 +2,15 @@ package de.greensurvivors.headnseek.paper;
 
 import org.bukkit.Bukkit;
 import org.bukkit.permissions.Permission;
+import org.bukkit.permissions.PermissionDefault;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 
 public enum PermissionWrapper {
-    ACTION_FIND_HEAD("action.find_head"),
-    ACTIONS("action.*", Map.of(
+    ACTION_FIND_HEAD("action.find_head", PermissionDefault.TRUE),
+    ACTIONS("action.*", PermissionDefault.OP, Map.of(
         ACTION_FIND_HEAD.permission.getName(), Boolean.TRUE
     )),
     CMD_CONFIGURE_HEAD("cmd.configure_head"),
@@ -17,7 +18,7 @@ public enum PermissionWrapper {
     CMD_DEFINE_BOARD("cmd.define_board"),
     CMD_REMOVE_BOARD("cmd.remove_board"),
     CMD_RELOAD("cmd.reload"),
-    COMMANDS("cmd.*", Map.of(
+    COMMANDS("cmd.*", PermissionDefault.OP, Map.of(
         CMD_CONFIGURE_HEAD.permission.getName(), Boolean.TRUE,
         CMD_GET.permission.getName(), Boolean.TRUE,
         CMD_DEFINE_BOARD.permission.getName(), Boolean.TRUE,
@@ -26,7 +27,7 @@ public enum PermissionWrapper {
     )),
     MESSAGE_PLACE_HEAD_BROADCAST("message.placeHead.broadcast"),
     @SuppressWarnings("unused")
-    ADMIN("*", Map.of(
+    ADMIN("*", PermissionDefault.OP, Map.of(
         ACTIONS.permission.getName(), Boolean.TRUE,
         COMMANDS.permission.getName(), Boolean.TRUE,
         MESSAGE_PLACE_HEAD_BROADCAST.permission.getName(), Boolean.TRUE
@@ -35,11 +36,16 @@ public enum PermissionWrapper {
     private final @NotNull Permission permission;
 
     PermissionWrapper(final @NotNull String name) {
-        this(name, null);
+        this(name, null, null);
     }
 
-    PermissionWrapper(final @NotNull String name, final @Nullable Map<@NotNull String, Boolean> children) {
-        permission = new Permission("headnseek." + name, children);
+    PermissionWrapper(final @NotNull String name, final @Nullable PermissionDefault permissionDefault) {
+        this(name, permissionDefault, null);
+    }
+
+    PermissionWrapper(final @NotNull String name, final @Nullable PermissionDefault permissionDefault,
+                      final @Nullable Map<@NotNull String, Boolean> children) {
+        permission = new Permission("headnseek." + name, permissionDefault, children);
 
         Bukkit.getPluginManager().addPermission(permission);
     }

@@ -89,7 +89,7 @@ public class HeadManager implements Listener {
                     }
                 }
             } catch (IOException | InvalidConfigurationException e) {
-                plugin.getComponentLogger().error("Couldn't load board file!", e);
+                plugin.getComponentLogger().error("Couldn't load head storage file!", e);
             }
         }
     }
@@ -100,8 +100,7 @@ public class HeadManager implements Listener {
     public @NotNull ItemStack configureHead(final @Range(from = 1, to = Integer.MAX_VALUE) int number, final @NotNull ItemStack stack) {
         stack.editPersistentDataContainer(persistentDataContainer ->
             persistentDataContainer.set(numberKey, PersistentDataType.INTEGER, number));
-        final @NotNull ItemStack clone = stack.clone();
-        clone.setAmount(1);
+        final @NotNull ItemStack clone = stack.asOne();
 
         headConfig.set(String.valueOf(number), Base64.getEncoder().encodeToString(clone.serializeAsBytes()));
 

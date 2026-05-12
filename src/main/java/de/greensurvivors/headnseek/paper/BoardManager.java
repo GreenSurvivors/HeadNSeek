@@ -7,8 +7,6 @@ import de.greensurvivors.headnseek.paper.language.TranslationKey;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import io.papermc.paper.math.BlockPosition;
 import io.papermc.paper.math.Position;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.kyori.adventure.key.Key;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.bukkit.*;
@@ -50,7 +48,8 @@ public class BoardManager implements Listener {
     protected final @NotNull FileConfiguration configuration;
     protected final @NotNull Path boardsFilePath;
     protected final @NotNull Set<@NotNull HeadBoard> headBoards = new HashSet<>();
-    protected final @NotNull Cache<@NotNull UUID, Boolean> definingPlayers = Caffeine.newBuilder()
+    /// this cache should be treated like a Set, the Value doesn't mean anything!
+    protected final @NotNull Cache<@NotNull UUID, Object> definingPlayers = Caffeine.newBuilder()
         .expireAfterWrite(5, TimeUnit.MINUTES)
         .build();
 
@@ -97,8 +96,8 @@ public class BoardManager implements Listener {
         }
     }
 
-    public void registerForDefining(final @NotNull UUID uuid, final @NotNull Boolean updateOld) {
-        this.definingPlayers.put(uuid, updateOld);
+    public void registerForDefining(final @NotNull UUID uuid) {
+        this.definingPlayers.put(uuid, Boolean.FALSE);
     }
 
     public @Range(from = 0, to = Integer.MAX_VALUE) int removeAllBoardsNear(final @NotNull Location center, final double radius) {
@@ -139,8 +138,8 @@ public class BoardManager implements Listener {
             if (block != null) {
                 final @NotNull Player player = event.getPlayer();
                 final @NotNull UUID uniqueId = player.getUniqueId();
-                final @Nullable Boolean updateOld = definingPlayers.getIfPresent(uniqueId);
-                if (updateOld != null) {
+                final @Nullable Object isPresent = definingPlayers.getIfPresent(uniqueId);
+                if (isPresent != null) {
                     if (block.getBlockData() instanceof WallSkull wallSkull) {
                         event.setCancelled(true);
                         final @NotNull World world = block.getWorld();
@@ -160,39 +159,17 @@ public class BoardManager implements Listener {
                             length);
 
                         boolean anyReplaced = false;
-                        final @NotNull Int2ObjectMap<ResolvableProfile> oldHeads = new Int2ObjectOpenHashMap<>();
-                        for (Iterator<HeadBoard> iterator = headBoards.iterator(); iterator.hasNext(); ) {
-                            HeadBoard existingHeadBoard = iterator.next();
+                        for (final @NotNull Iterator<HeadBoard> iterator = headBoards.iterator(); iterator.hasNext(); ) {
+                            final @NotNull HeadBoard existingHeadBoard = iterator.next();
                             if (worldKey.equals(existingHeadBoard.worldKey) &&
                                 newHeadBoard.boundingBox.overlaps(existingHeadBoard.boundingBox)) {
                                 if (newHeadBoard.facing == existingHeadBoard.facing) {
                                     iterator.remove();
                                     anyReplaced = true;
-
-                                    if (updateOld) {
-                                        int num = 1;
-                                        for (int y = (int) existingHeadBoard.boundingBox.getMaxY(); y > existingHeadBoard.boundingBox.getMinY(); y--) {
-                                            for (int x = (int) existingHeadBoard.boundingBox.getMaxX(); x > existingHeadBoard.boundingBox.getMinX(); x--) {
-                                                for (int z = (int) existingHeadBoard.boundingBox.getMaxZ(); z > existingHeadBoard.boundingBox.getMinZ(); z--) {
-
-                                                    if (world.getBlockAt(x, y, z).getState(false) instanceof Skull skull) {
-                                                        oldHeads.put(num, skull.getProfile());
-                                                    }
-                                                    num++;
-                                                }
-                                            }
-                                        }
-                                    }
                                 } else {
                                     plugin.getMessageManager().sendLang(player, TranslationKey.ACTION_DEFINE_BOARD_ERROR_OVERLAP_CANT_MERGE); // todo add delete cmd reference here
                                     return;
                                 }
-                            }
-                        }
-
-                        if (!oldHeads.isEmpty()) {
-                            for (final @NotNull Int2ObjectMap.Entry<@NotNull ResolvableProfile> entry : oldHeads.int2ObjectEntrySet()) {
-                                setHeadOnBoard(newHeadBoard, entry.getIntKey(), entry.getValue());
                             }
                         }
 
@@ -239,7 +216,7 @@ public class BoardManager implements Listener {
 
             writer.write(configuration.saveToString());
         } catch (final @NotNull IOException e) {
-            plugin.getComponentLogger().error("Could not safe head file to disk. Data loss is imminent!", e);
+            plugin.getComponentLogger().error("Could not safe board file to disk. Data loss is imminent!", e);
         }
     }
 
@@ -268,10 +245,15 @@ public class BoardManager implements Listener {
             final @NotNull WallSkull data = BlockType.PLAYER_WALL_HEAD.createBlockData();
             data.setFacing(headBoard.facing);
 
-            world.setBlockData(x, y, z, data);
-            final Skull head = (Skull) world.getBlockAt(x, y, z).getState(false);
-            head.setProfile(profile);
-            head.update(true, false); // even though we are not working with a snapshot here, the state somehow needs to get updated.
+            // sanity check, don't overflow
+            if (headBoard.boundingBox.contains(x, y, z)) {
+                world.setBlockData(x, y, z, data);
+                final Skull head = (Skull) world.getBlockAt(x, y, z).getState(false);
+                head.setProfile(profile);
+                head.update(true, false); // even though we are not working with a snapshot here, the state somehow needs to get updated.
+            } else {
+                plugin.getComponentLogger().warn("Couldn't place head number " + headNum + " on board in world " + headBoard.worldKey() + " at " + headBoard.boundingBox() + ", because the board was too small!");
+            }
         } else {
             plugin.getComponentLogger().warn("Could not find World named {}", headBoard.worldKey);
         }
